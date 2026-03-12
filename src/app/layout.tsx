@@ -3,7 +3,7 @@ import "./globals.css";
 import Link from "next/link";
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { createServerSupabase } from "@/lib/supabaseClient";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "InkVoid",

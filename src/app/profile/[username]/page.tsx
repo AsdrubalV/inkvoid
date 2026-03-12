@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabaseClient";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
 
 interface ProfilePageProps {
