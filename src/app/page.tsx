@@ -34,7 +34,7 @@ export default async function HomePage() {
         <h1 className="text-2xl font-semibold tracking-tight">Latest updates</h1>
         <div className="space-y-3 rounded-xl border border-border bg-white/70 p-4">
           {recentStories?.length ? (
-            recentStories.map((story) => (
+            recentStories.map((story: any) => (
               <Link
                 key={story.id}
                 href={`/story/${story.id}`}
@@ -71,7 +71,7 @@ export default async function HomePage() {
         <h2 className="text-lg font-semibold tracking-tight">Trending</h2>
         <div className="space-y-2 rounded-xl border border-border bg-white/70 p-4">
           {trendingStories?.length ? (
-            trendingStories.map((s) => (
+            trendingStories.map((s: any) => (
               <Link
                 key={s.story_id}
                 href={`/story/${s.story_id}`}
