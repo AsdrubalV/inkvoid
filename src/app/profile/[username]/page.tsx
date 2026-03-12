@@ -8,7 +8,7 @@ interface ProfilePageProps {
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
-  const supabase = createServerSupabase(cookies);
+  const supabase = createServerSupabase(cookies());
 
   const { data: profile, error } = await supabase
     .from("profiles")
