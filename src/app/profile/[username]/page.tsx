@@ -37,7 +37,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <h2 className="text-sm font-semibold">Stories</h2>
         <div className="space-y-3">
           {stories?.length ? (
-            stories.map((s) => (
+            stories.map((s: any) => (
               <StoryCard
                 key={s.id}
                 id={s.id}
