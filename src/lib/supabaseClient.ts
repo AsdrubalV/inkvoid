@@ -1,5 +1,6 @@
-import { createBrowserClient, createServerClient } from "@supabase/auth-helpers-nextjs";
-import type { cookies as CookiesType } from "next/headers";
+import { createBrowserClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export function createClient() {
   return createBrowserClient(
@@ -8,17 +9,20 @@ export function createClient() {
   );
 }
 
-export function createServerSupabase(cookies: ReturnType<typeof CookiesType>) {
+export function createServerSupabase() {
+  const cookieStore = cookies();
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookies().get(name)?.value;
-        }
+          return cookieStore.get(name)?.value;
+        },
+        set() {},
+        remove() {}
       }
     }
   );
 }
-

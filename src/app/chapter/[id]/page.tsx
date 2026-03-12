@@ -8,7 +8,7 @@ interface ChapterPageProps {
 }
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
-  const supabase = createServerSupabase(cookies());
+  const supabase = createServerSupabase();
 
   const { data: chapter, error } = await supabase
     .from("chapters")
