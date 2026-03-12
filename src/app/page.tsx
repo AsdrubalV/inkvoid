@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabaseClient";
 
 export default async function HomePage() {
-  const supabase = createServerSupabase(cookies);
+  const supabase = createServerSupabase(cookies());
 
   const { data: recentStories } = await supabase
     .from("stories")
@@ -91,4 +91,3 @@ export default async function HomePage() {
     </div>
   );
 }
-
