@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { RichTextEditor } from "@/components/Editor";
 
 export default function PublishPage() {

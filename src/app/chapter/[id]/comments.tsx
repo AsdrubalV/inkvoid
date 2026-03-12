@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 
 interface Comment {
   id: string;
