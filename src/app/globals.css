@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f6f6f7;
+  --foreground: #050816;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}
+
+.prose {
+  @apply max-w-none;
+}
+
