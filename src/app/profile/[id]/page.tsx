@@ -5,17 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface ProfilePageProps {
-  params: { username: string };
+  params: { id: string };
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = createServerSupabase();
 
-  // Buscar perfil por ID en lugar de username
+  // Buscar perfil usando ID
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, username, bio, avatar_url")
-    .eq("id", params.username)
+    .eq("id", params.id)
     .single();
 
   if (!profile) return notFound();
@@ -64,7 +64,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           >
             Edit profile
           </Link>
-
         </div>
 
       </div>
