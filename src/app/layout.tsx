@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import Image from "next/image";
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "InkVoid",
-  description: "Minimalist web fiction platform"
+  description: "Lee, escribe y descubre historias",
+  icons: {
+    icon: "/inkvoid%20logo%201.png",
+    apple: "/inkvoid%20logo%201.png"
+  }
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -22,8 +27,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <div className="border-b border-border bg-white/70 backdrop-blur">
           <header className="container flex h-16 items-center justify-between">
             <div className="flex items-center gap-6">
-              <Link href="/" className="text-xl font-semibold tracking-tight">
-                InkVoid
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/inkvoid%20logo%204.png"
+                  alt="InkVoid"
+                  width={140}
+                  height={40}
+                  priority
+                  className="h-8 w-auto"
+                />
               </Link>
               <nav className="flex items-center gap-4 text-sm text-gray-700">
                 <Link href="/trending" className="hover:text-black">
