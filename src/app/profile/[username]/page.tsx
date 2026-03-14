@@ -1,7 +1,8 @@
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
+import Image from "next/image";
+import Link from "next/link";
 
 interface ProfilePageProps {
   params: { username: string };
@@ -10,13 +11,13 @@ interface ProfilePageProps {
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = createServerSupabase();
 
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, bio")
+    .select("id, username, bio, avatar_url")
     .eq("username", params.username)
     .single();
 
-  if (error || !profile) return notFound();
+  if (!profile) return notFound();
 
   const { data: stories } = await supabase
     .from("stories")
@@ -25,17 +26,82 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-white/70 p-5">
-        <h1 className="text-xl font-semibold">@{profile.username}</h1>
-        <p className="mt-2 text-sm text-gray-700">
-          {profile.bio || "This author has not written a bio yet."}
-        </p>
-      </section>
+    <div className="space-y-8">
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Stories</h2>
-        <div className="space-y-3">
+      {/* HERO DEL PERFIL */}
+      <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
+        <Image
+          src="/imagen1.jpg"
+          alt="banner"
+          fill
+          className="object-cover"
+        />
+      </div>
+
+      {/* CABECERA PERFIL */}
+      <div className="flex items-center gap-6">
+
+        <div className="relative h-24 w-24 overflow-hidden rounded-full border">
+          <Image
+            src={profile.avatar_url || "/default-avatar.png"}
+            alt="avatar"
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        <div>
+          <h1 className="text-2xl font-semibold">@{profile.username}</h1>
+          <p className="text-gray-600 text-sm">
+            {profile.bio || "This author has not written a bio yet."}
+          </p>
+
+          <Link
+            href="/settings"
+            className="inline-block mt-2 rounded-md border px-3 py-1 text-sm hover:bg-gray-100"
+          >
+            Edit profile
+          </Link>
+        </div>
+
+      </div>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="grid grid-cols-3 gap-8">
+
+        {/* COLUMNA IZQUIERDA */}
+        <div className="space-y-4">
+
+          <h3 className="text-sm font-semibold">Author Links</h3>
+
+          <a
+            href="#"
+            className="block rounded-lg border p-3 hover:bg-gray-50"
+          >
+            Amazon
+          </a>
+
+          <a
+            href="#"
+            className="block rounded-lg border p-3 hover:bg-gray-50"
+          >
+            Patreon
+          </a>
+
+          <a
+            href="#"
+            className="block rounded-lg border p-3 hover:bg-gray-50"
+          >
+            TikTok
+          </a>
+
+        </div>
+
+        {/* COLUMNA DERECHA */}
+        <div className="col-span-2 space-y-4">
+
+          <h2 className="text-lg font-semibold">Stories</h2>
+
           {stories?.length ? (
             stories.map((s: any) => (
               <StoryCard
@@ -50,11 +116,26 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               />
             ))
           ) : (
-            <p className="text-sm text-gray-500">No stories yet.</p>
+            <p className="text-gray-500 text-sm">
+              This author has not published stories yet.
+            </p>
           )}
+
         </div>
-      </section>
+
+      </div>
+
+      {/* MENSAJES A LA COMUNIDAD */}
+      <div className="space-y-3">
+
+        <h2 className="text-lg font-semibold">Community Messages</h2>
+
+        <div className="rounded-lg border p-4 text-sm text-gray-600">
+          This section will contain messages from the author to the community.
+        </div>
+
+      </div>
+
     </div>
   );
 }
-
