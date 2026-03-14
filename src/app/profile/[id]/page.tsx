@@ -5,18 +5,23 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface ProfilePageProps {
-  params: { id: string };
+  params: {
+    id: string;
+  };
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
+
+  const { id } = params;
+
   const supabase = createServerSupabase();
 
-  // Buscar perfil usando ID
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, username, bio, avatar_url")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
+
 
   if (!profile) return notFound();
 
