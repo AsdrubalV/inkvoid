@@ -11,10 +11,11 @@ interface ProfilePageProps {
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = createServerSupabase();
 
+  // Buscar perfil por ID en lugar de username
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, username, bio, avatar_url")
-    .eq("username", params.username)
+    .eq("id", params.username)
     .single();
 
   if (!profile) return notFound();
@@ -28,7 +29,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <div className="space-y-8">
 
-      {/* HERO DEL PERFIL */}
+      {/* HERO */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         <Image
           src="/imagen1.jpg"
@@ -38,7 +39,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         />
       </div>
 
-      {/* CABECERA PERFIL */}
+      {/* HEADER PERFIL */}
       <div className="flex items-center gap-6">
 
         <div className="relative h-24 w-24 overflow-hidden rounded-full border">
@@ -52,6 +53,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
         <div>
           <h1 className="text-2xl font-semibold">@{profile.username}</h1>
+
           <p className="text-gray-600 text-sm">
             {profile.bio || "This author has not written a bio yet."}
           </p>
@@ -62,14 +64,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           >
             Edit profile
           </Link>
+
         </div>
 
       </div>
 
-      {/* CONTENIDO PRINCIPAL */}
+      {/* GRID PRINCIPAL */}
       <div className="grid grid-cols-3 gap-8">
 
-        {/* COLUMNA IZQUIERDA */}
+        {/* LINKS AUTOR */}
         <div className="space-y-4">
 
           <h3 className="text-sm font-semibold">Author Links</h3>
@@ -97,7 +100,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
         </div>
 
-        {/* COLUMNA DERECHA */}
+        {/* HISTORIAS */}
         <div className="col-span-2 space-y-4">
 
           <h2 className="text-lg font-semibold">Stories</h2>
@@ -125,7 +128,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
       </div>
 
-      {/* MENSAJES A LA COMUNIDAD */}
+      {/* MENSAJES */}
       <div className="space-y-3">
 
         <h2 className="text-lg font-semibold">Community Messages</h2>

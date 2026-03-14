@@ -50,7 +50,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               {user ? (
                 <>
                   <Link
-                    href={`/profile/${user.user_metadata?.username || user.email}`}
+                    href={`/profile/${user.id}`}
                     className="rounded-full border border-border px-3 py-1 hover:bg-gray-50"
                   >
                     Profile
