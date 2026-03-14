@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   title: "InkVoid",
   description: "Lee, escribe y descubre historias",
   icons: {
-    icon: "/inkvoid%20logo%201.png",
-    apple: "/inkvoid%20logo%201.png"
+    icon: "/inkvoidlogo1.png",
+    apple: "/inkvoidlogo1.png"
   }
 };
 
@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <div className="flex items-center gap-6">
               <Link href="/" className="flex items-center gap-2">
                 <Image
-                  src="/inkvoid%20logo%204.png"
+                  src="/inkvoidlogo4.png"
                   alt="InkVoid"
                   width={140}
                   height={40}
