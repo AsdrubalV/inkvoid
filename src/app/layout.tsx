@@ -21,6 +21,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     data: { user }
   } = await supabase.auth.getUser();
 
+  let username: string | null = null;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+
+    username = profile?.username ?? null;
+  }
+
   return (
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground">
@@ -56,12 +68,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
               {user ? (
                 <>
-                  <Link
-                    href={`/profile/${user.id}`}
-                    className="rounded-full border border-border px-3 py-1 hover:bg-gray-50"
-                  >
-                    Profile
-                  </Link>
+                  {username && (
+                    <Link
+                      href={`/user/${username}`}
+                      className="rounded-full border border-border px-3 py-1 hover:bg-gray-50"
+                    >
+                      Profile
+                    </Link>
+                  )}
 
                   <form action="/auth/sign-out" method="post">
                     <button
@@ -73,12 +87,23 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   </form>
                 </>
               ) : (
-                <Link
-                  href="/login"
-                  className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-black"
-                >
-                  Sign in
-                </Link>
+                <div className="flex gap-3">
+
+                  <Link
+                    href="/signup"
+                    className="rounded-full border border-border px-4 py-1.5 hover:bg-gray-50"
+                  >
+                    Sign up
+                  </Link>
+
+                  <Link
+                    href="/login"
+                    className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-black"
+                  >
+                    Sign in
+                  </Link>
+
+                </div>
               )}
 
             </div>
