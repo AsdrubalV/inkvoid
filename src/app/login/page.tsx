@@ -31,7 +31,27 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(`/profile/${data.user.id}`);
+    if (!data?.user) {
+      setError("User not found");
+      setLoading(false);
+      return;
+    }
+
+    // buscar el username del perfil
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      setError("Profile not found");
+      setLoading(false);
+      return;
+    }
+
+    // redirigir al perfil público
+    router.push(`/user/${profile.username}`);
     router.refresh();
   };
 
