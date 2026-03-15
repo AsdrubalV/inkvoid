@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </>
               ) : (
                 <Link
-                  href="/auth"
+                  href="/login"
                   className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-black"
                 >
                   Sign in
