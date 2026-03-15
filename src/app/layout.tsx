@@ -15,15 +15,19 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+
   const supabase = createServerSupabase();
 
   const {
-    data: { user }
-  } = await supabase.auth.getUser();
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  const user = session?.user ?? null;
 
   let username: string | null = null;
 
   if (user) {
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("username")
@@ -36,6 +40,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground">
+
         <div className="border-b border-border bg-white/70 backdrop-blur">
           <header className="container flex h-16 items-center justify-between">
 
@@ -53,6 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </Link>
 
               <nav className="flex items-center gap-4 text-sm text-gray-700">
+
                 <Link href="/trending" className="hover:text-black">
                   Trending
                 </Link>
@@ -60,6 +66,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <Link href="/publish" className="hover:text-black">
                   Publish
                 </Link>
+
               </nav>
 
             </div>
@@ -68,12 +75,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
               {user ? (
                 <>
+
                   {username && (
                     <Link
                       href={`/user/${username}`}
                       className="rounded-full border border-border px-3 py-1 hover:bg-gray-50"
                     >
-                      Profile
+                      {username}
                     </Link>
                   )}
 
@@ -85,8 +93,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                       Sign out
                     </button>
                   </form>
+
                 </>
               ) : (
+
                 <div className="flex gap-3">
 
                   <Link
@@ -104,6 +114,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   </Link>
 
                 </div>
+
               )}
 
             </div>
