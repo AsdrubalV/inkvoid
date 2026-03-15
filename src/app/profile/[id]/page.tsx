@@ -18,10 +18,19 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, bio, avatar_url")
+    .select(`
+      id,
+      username,
+      bio,
+      avatar_url,
+      banner_url,
+      amazon_url,
+      patreon_url,
+      tiktok_url,
+      website_url
+    `)
     .eq("id", id)
     .single();
-
 
   if (!profile) return notFound();
 
@@ -37,7 +46,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       {/* HERO */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         <Image
-          src="/imagen1.jpg"
+          src={profile.banner_url || "/imagen1.jpg"}
           alt="banner"
           fill
           className="object-cover"
@@ -81,26 +90,45 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           <h3 className="text-sm font-semibold">Author Links</h3>
 
-          <a
-            href="#"
-            className="block rounded-lg border p-3 hover:bg-gray-50"
-          >
-            Amazon
-          </a>
+          {profile.amazon_url && (
+            <a
+              href={profile.amazon_url}
+              target="_blank"
+              className="block rounded-lg border p-3 hover:bg-gray-50"
+            >
+              Amazon
+            </a>
+          )}
 
-          <a
-            href="#"
-            className="block rounded-lg border p-3 hover:bg-gray-50"
-          >
-            Patreon
-          </a>
+          {profile.patreon_url && (
+            <a
+              href={profile.patreon_url}
+              target="_blank"
+              className="block rounded-lg border p-3 hover:bg-gray-50"
+            >
+              Patreon
+            </a>
+          )}
 
-          <a
-            href="#"
-            className="block rounded-lg border p-3 hover:bg-gray-50"
-          >
-            TikTok
-          </a>
+          {profile.tiktok_url && (
+            <a
+              href={profile.tiktok_url}
+              target="_blank"
+              className="block rounded-lg border p-3 hover:bg-gray-50"
+            >
+              TikTok
+            </a>
+          )}
+
+          {profile.website_url && (
+            <a
+              href={profile.website_url}
+              target="_blank"
+              className="block rounded-lg border p-3 hover:bg-gray-50"
+            >
+              Website
+            </a>
+          )}
 
         </div>
 
