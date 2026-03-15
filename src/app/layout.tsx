@@ -5,6 +5,8 @@ import Image from "next/image";
 import { ReactNode } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "InkVoid",
   description: "Lee, escribe y descubre historias",
