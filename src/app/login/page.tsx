@@ -37,7 +37,6 @@ export default function LoginPage() {
       return;
     }
 
-    // buscar el username del perfil
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("username")
@@ -50,7 +49,6 @@ export default function LoginPage() {
       return;
     }
 
-    // redirigir al perfil público
     router.push(`/user/${profile.username}`);
     router.refresh();
   };

@@ -5,8 +5,6 @@ import Image from "next/image";
 import { ReactNode } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "InkVoid",
   description: "Lee, escribe y descubre historias",
@@ -21,15 +19,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const supabase = createServerSupabase();
 
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
-
-  const user = session?.user ?? null;
+    data: { user }
+  } = await supabase.auth.getUser();
 
   let username: string | null = null;
 
   if (user) {
-
     const { data: profile } = await supabase
       .from("profiles")
       .select("username")
@@ -44,6 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
 
         <div className="border-b border-border bg-white/70 backdrop-blur">
+
           <header className="container flex h-16 items-center justify-between">
 
             <div className="flex items-center gap-6">
@@ -110,7 +106,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
                   <Link
                     href="/login"
-                    className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-black"
+                    className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
                   >
                     Sign in
                   </Link>
@@ -122,6 +118,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             </div>
 
           </header>
+
         </div>
 
         <main className="container py-8">

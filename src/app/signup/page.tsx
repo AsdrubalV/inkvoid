@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   const signUp = async (e: React.FormEvent) => {
+
     e.preventDefault();
 
     setError("");
@@ -56,9 +57,12 @@ export default function SignupPage() {
     }
 
     router.push(`/user/${username}`);
+    router.refresh();
+
   };
 
   return (
+
     <div className="flex justify-center mt-20">
 
       <form
@@ -66,13 +70,15 @@ export default function SignupPage() {
         className="w-[400px] space-y-4"
       >
 
-        <h1 className="text-2xl font-semibold">Sign up</h1>
+        <h1 className="text-2xl font-semibold">
+          Sign up
+        </h1>
 
         <input
           type="text"
           placeholder="Username"
           value={username}
-          onChange={(e)=>setUsername(e.target.value)}
+          onChange={(e) => setUsername(e.target.value)}
           className="border w-full p-2"
           required
         />
@@ -81,7 +87,7 @@ export default function SignupPage() {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e)=>setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           className="border w-full p-2"
           required
         />
@@ -90,13 +96,15 @@ export default function SignupPage() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e)=>setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           className="border w-full p-2"
           required
         />
 
         {error && (
-          <p className="text-red-500 text-sm">{error}</p>
+          <p className="text-red-500 text-sm">
+            {error}
+          </p>
         )}
 
         <button
@@ -110,5 +118,6 @@ export default function SignupPage() {
       </form>
 
     </div>
+
   );
 }
