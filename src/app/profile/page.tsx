@@ -1,24 +1,25 @@
-import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function ProfilePage() {
-
   const supabase = createServerSupabase();
 
   const {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user) return notFound();
+  if (!user) {
+    return <div style={{ padding: 40 }}>User not logged in</div>;
+  }
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select(`
       id,
       username,
+      email,
       bio,
       avatar_url,
       banner_url,
@@ -28,9 +29,15 @@ export default async function ProfilePage() {
       website_url
     `)
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!profile) return notFound();
+  if (error) {
+    return <div style={{ padding: 40 }}>Database error: {error.message}</div>;
+  }
+
+  if (!profile) {
+    return <div style={{ padding: 40 }}>Profile not found in database</div>;
+  }
 
   const { data: stories } = await supabase
     .from("stories")
@@ -41,7 +48,6 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-8">
 
-      {/* HERO */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         <Image
           src={profile.banner_url || "/imagen1.jpg"}
@@ -51,7 +57,6 @@ export default async function ProfilePage() {
         />
       </div>
 
-      {/* HEADER PERFIL */}
       <div className="flex items-center gap-6">
 
         <div className="relative h-24 w-24 overflow-hidden rounded-full border">
@@ -80,57 +85,38 @@ export default async function ProfilePage() {
 
       </div>
 
-      {/* GRID PRINCIPAL */}
       <div className="grid grid-cols-3 gap-8">
 
-        {/* LINKS AUTOR */}
         <div className="space-y-4">
 
           <h3 className="text-sm font-semibold">Author Links</h3>
 
           {profile.amazon_url && (
-            <a
-              href={profile.amazon_url}
-              target="_blank"
-              className="block rounded-lg border p-3 hover:bg-gray-50"
-            >
+            <a href={profile.amazon_url} target="_blank" className="block rounded-lg border p-3 hover:bg-gray-50">
               Amazon
             </a>
           )}
 
           {profile.patreon_url && (
-            <a
-              href={profile.patreon_url}
-              target="_blank"
-              className="block rounded-lg border p-3 hover:bg-gray-50"
-            >
+            <a href={profile.patreon_url} target="_blank" className="block rounded-lg border p-3 hover:bg-gray-50">
               Patreon
             </a>
           )}
 
           {profile.tiktok_url && (
-            <a
-              href={profile.tiktok_url}
-              target="_blank"
-              className="block rounded-lg border p-3 hover:bg-gray-50"
-            >
+            <a href={profile.tiktok_url} target="_blank" className="block rounded-lg border p-3 hover:bg-gray-50">
               TikTok
             </a>
           )}
 
           {profile.website_url && (
-            <a
-              href={profile.website_url}
-              target="_blank"
-              className="block rounded-lg border p-3 hover:bg-gray-50"
-            >
+            <a href={profile.website_url} target="_blank" className="block rounded-lg border p-3 hover:bg-gray-50">
               Website
             </a>
           )}
 
         </div>
 
-        {/* HISTORIAS */}
         <div className="col-span-2 space-y-4">
 
           <h2 className="text-lg font-semibold">Stories</h2>
@@ -154,17 +140,6 @@ export default async function ProfilePage() {
             </p>
           )}
 
-        </div>
-
-      </div>
-
-      {/* MENSAJES */}
-      <div className="space-y-3">
-
-        <h2 className="text-lg font-semibold">Community Messages</h2>
-
-        <div className="rounded-lg border p-4 text-sm text-gray-600">
-          This section will contain messages from the author to the community.
         </div>
 
       </div>
