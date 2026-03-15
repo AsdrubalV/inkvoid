@@ -3,7 +3,6 @@ import "./globals.css";
 import Link from "next/link";
 import Image from "next/image";
 import { ReactNode } from "react";
-import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -17,6 +16,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const supabase = createServerSupabase();
+
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -26,7 +26,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
         <div className="border-b border-border bg-white/70 backdrop-blur">
           <header className="container flex h-16 items-center justify-between">
+
             <div className="flex items-center gap-6">
+
               <Link href="/" className="flex items-center gap-2">
                 <Image
                   src="/inkvoidlogo4.png"
@@ -37,16 +39,21 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   className="h-8 w-auto"
                 />
               </Link>
+
               <nav className="flex items-center gap-4 text-sm text-gray-700">
                 <Link href="/trending" className="hover:text-black">
                   Trending
                 </Link>
+
                 <Link href="/publish" className="hover:text-black">
                   Publish
                 </Link>
               </nav>
+
             </div>
+
             <div className="flex items-center gap-4 text-sm">
+
               {user ? (
                 <>
                   <Link
@@ -55,6 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   >
                     Profile
                   </Link>
+
                   <form action="/auth/sign-out" method="post">
                     <button
                       type="submit"
@@ -72,10 +80,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   Sign in
                 </Link>
               )}
+
             </div>
+
           </header>
         </div>
-        <main className="container py-8">{children}</main>
+
+        <main className="container py-8">
+          {children}
+        </main>
+
       </body>
     </html>
   );
