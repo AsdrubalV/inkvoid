@@ -22,8 +22,6 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    const cleanUsername = username.trim().toLowerCase();
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password
@@ -48,7 +46,7 @@ export default function SignupPage() {
       .insert({
         id: user.id,
         email: email,
-        username: cleanUsername
+        username: username
       });
 
     if (profileError) {
@@ -57,10 +55,7 @@ export default function SignupPage() {
       return;
     }
 
-    // importante para que el layout detecte la sesión
-    router.refresh();
-
-    router.push(`/user/${cleanUsername}`);
+    router.push(`/user/${username}`);
   };
 
   return (
