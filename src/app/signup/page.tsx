@@ -42,13 +42,6 @@ export default function SignupPage() {
       return;
     }
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: user.id,
-        email: email,
-        username: username
-      });
 
     if (profileError) {
       setError(profileError.message);
