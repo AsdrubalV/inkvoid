@@ -25,7 +25,12 @@ export default function SignupPage() {
 
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          username: username
+        }
+      }
     });
 
     if (error) {
@@ -38,13 +43,6 @@ export default function SignupPage() {
 
     if (!user) {
       setError("User creation failed");
-      setLoading(false);
-      return;
-    }
-
-
-    if (profileError) {
-      setError(profileError.message);
       setLoading(false);
       return;
     }
