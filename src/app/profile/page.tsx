@@ -4,17 +4,15 @@ import { StoryCard } from "@/components/StoryCard";
 import Image from "next/image";
 import Link from "next/link";
 
-interface ProfilePageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default async function ProfilePage({ params }: ProfilePageProps) {
-
-  const { id } = params;
+export default async function ProfilePage() {
 
   const supabase = createServerSupabase();
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return notFound();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -29,7 +27,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       tiktok_url,
       website_url
     `)
-    .eq("id", id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) return notFound();
