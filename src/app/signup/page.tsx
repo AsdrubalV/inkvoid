@@ -6,109 +6,127 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
 
-  const router = useRouter();
-  const supabase = createClient();
+const router = useRouter();
+const supabase = createClient();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const [username, setUsername] = useState("");
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+const [loading, setLoading] = useState(false);
 
-  const signUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+const signUp = async (e: React.FormEvent) => {
+e.preventDefault();
 
-    setError("");
-    setLoading(true);
+```
+setError("");
+setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password
-    });
+// 1️⃣ Crear usuario en auth
+const { data, error: signUpError } = await supabase.auth.signUp({
+  email,
+  password
+});
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
+if (signUpError) {
+  setError(signUpError.message);
+  setLoading(false);
+  return;
+}
 
-    const user = data.user;
+const user = data.user;
 
-    if (!user) {
-      setError("User creation failed");
-      setLoading(false);
-      return;
-    }
+if (!user) {
+  setError("User creation failed");
+  setLoading(false);
+  return;
+}
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: user.id,
-        email: email,
-        username: username
-      });
+// 2️⃣ Esperar a que exista sesión
+const { data: sessionData } = await supabase.auth.getSession();
 
-    if (profileError) {
-      setError(profileError.message);
-      setLoading(false);
-      return;
-    }
+if (!sessionData.session) {
+  setError("Session not ready yet. Please login.");
+  setLoading(false);
+  return;
+}
 
-    router.push(`/user/${username}`);
-  };
+// 3️⃣ Crear perfil
+const { error: profileError } = await supabase
+  .from("profiles")
+  .insert({
+    id: user.id,
+    email: email,
+    username: username
+  });
 
-  return (
-    <div className="flex justify-center mt-20">
+if (profileError) {
+  setError(profileError.message);
+  setLoading(false);
+  return;
+}
 
-      <form
-        onSubmit={signUp}
-        className="w-[400px] space-y-4"
-      >
+// 4️⃣ Redirigir al perfil
+router.push(`/user/${username}`);
+router.refresh();
+```
 
-        <h1 className="text-2xl font-semibold">Sign up</h1>
+};
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e)=>setUsername(e.target.value)}
-          className="border w-full p-2"
-          required
-        />
+return ( <div className="flex justify-center mt-20">
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e)=>setEmail(e.target.value)}
-          className="border w-full p-2"
-          required
-        />
+```
+  <form
+    onSubmit={signUp}
+    className="w-[400px] space-y-4"
+  >
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e)=>setPassword(e.target.value)}
-          className="border w-full p-2"
-          required
-        />
+    <h1 className="text-2xl font-semibold">Sign up</h1>
 
-        {error && (
-          <p className="text-red-500 text-sm">{error}</p>
-        )}
+    <input
+      type="text"
+      placeholder="Username"
+      value={username}
+      onChange={(e)=>setUsername(e.target.value)}
+      className="border w-full p-2"
+      required
+    />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white px-4 py-2"
-        >
-          {loading ? "Creating account..." : "Sign up"}
-        </button>
+    <input
+      type="email"
+      placeholder="Email"
+      value={email}
+      onChange={(e)=>setEmail(e.target.value)}
+      className="border w-full p-2"
+      required
+    />
 
-      </form>
+    <input
+      type="password"
+      placeholder="Password"
+      value={password}
+      onChange={(e)=>setPassword(e.target.value)}
+      className="border w-full p-2"
+      required
+    />
 
-    </div>
-  );
+    {error && (
+      <p className="text-red-500 text-sm">{error}</p>
+    )}
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="bg-black text-white px-4 py-2"
+    >
+      {loading ? "Creating account..." : "Sign up"}
+    </button>
+
+  </form>
+
+</div>
+```
+
+);
 }
