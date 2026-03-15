@@ -6,5 +6,5 @@ export async function POST(request: Request) {
   await supabase.auth.signOut();
 
   const url = new URL("/", request.url);
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(new URL("/", "https://inkvoid.onrender.com"));
 }
