@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -12,8 +11,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: story, error } = await supabase
     .from("stories")
-    .select(
-      `
+    .select(`
       id,
       title,
       description,
@@ -27,8 +25,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
       ),
       likes:story_likes(count),
       bookmarks:story_bookmarks(count)
-    `
-    )
+    `)
     .eq("id", params.id)
     .single();
 
@@ -40,45 +37,42 @@ export default async function StoryPage({ params }: StoryPageProps) {
     .eq("story_id", story.id)
     .order("chapter_number", { ascending: true });
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // ─── Registrar vista ────────────────────────────────────────────────────
-  // Se inserta siempre que alguien abre la página.
-  // user_id es null si no está autenticado (vistas anónimas también cuentan).
-  await supabase.from("story_views").insert({
-    story_id: params.id,
-    user_id: user?.id ?? null,
-  });
-  // ────────────────────────────────────────────────────────────────────────
+  // Registrar vista — nunca debe romper la página
+  try {
+    await supabase.from("story_views").insert({
+      story_id: params.id,
+      user_id: user?.id ?? null,
+    });
+  } catch (_) {}
 
-  const { data: follow } =
-    user &&
-    (await supabase
-      .from("follows")
-      .select("id")
-      .eq("follower_id", user.id)
-      .eq("followed_id", story.author_id)
-      .maybeSingle());
+  const { data: follow } = user
+    ? await supabase
+        .from("follows")
+        .select("id")
+        .eq("follower_id", user.id)
+        .eq("followed_id", story.author_id)
+        .maybeSingle()
+    : { data: null };
 
-  const { data: like } =
-    user &&
-    (await supabase
-      .from("story_likes")
-      .select("id")
-      .eq("story_id", story.id)
-      .eq("user_id", user.id)
-      .maybeSingle());
+  const { data: like } = user
+    ? await supabase
+        .from("story_likes")
+        .select("id")
+        .eq("story_id", story.id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
-  const { data: bookmark } =
-    user &&
-    (await supabase
-      .from("story_bookmarks")
-      .select("id")
-      .eq("story_id", story.id)
-      .eq("user_id", user.id)
-      .maybeSingle());
+  const { data: bookmark } = user
+    ? await supabase
+        .from("story_bookmarks")
+        .select("id")
+        .eq("story_id", story.id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
   const likesCount = (story as any).likes?.[0]?.count ?? 0;
   const bookmarksCount = (story as any).bookmarks?.[0]?.count ?? 0;
@@ -115,9 +109,9 @@ export default async function StoryPage({ params }: StoryPageProps) {
             {story.description && (
               <p className="mt-2 max-w-xl text-sm text-gray-700">{story.description}</p>
             )}
-            {story.tags?.length ? (
+            {(story.tags as string[])?.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
-                {story.tags.map((tag: string) => (
+                {(story.tags as string[]).map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full border border-border px-2 py-0.5 text-[11px] text-gray-600"
@@ -173,9 +167,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
                   href={`/chapter/${ch.id}`}
                   className="flex items-center justify-between py-2 text-sm hover:bg-gray-50"
                 >
-                  <span>
-                    {ch.chapter_number}. {ch.title}
-                  </span>
+                  <span>{ch.chapter_number}. {ch.title}</span>
                 </Link>
               ))
             ) : (
