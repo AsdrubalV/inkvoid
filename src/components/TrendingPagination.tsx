@@ -1,3 +1,5 @@
+import React from "react";
+
 interface Props {
   page: number;
   hasMore: boolean;
@@ -7,7 +9,9 @@ interface Props {
 }
 
 export default function TrendingPagination({ page, hasMore, sort, period, category }: Props) {
-  const base = `/trending?sort=${sort}&period=${period}${category ? `&category=${encodeURIComponent(category)}` : ""}`;
+  const base = `/trending?sort=${sort}&period=${period}${
+    category ? `&category=${encodeURIComponent(category)}` : ""
+  }`;
 
   return (
     <div className="flex items-center justify-center gap-4 pt-4">
