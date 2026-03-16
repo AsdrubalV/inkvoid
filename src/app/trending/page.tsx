@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import TrendingFilters from "@/components/TrendingFilters";
 import TrendingGrid from "@/components/TrendingGrid";
+import TrendingPagination from "@/components/TrendingPagination";
 
 const ALL_CATEGORIES = [
   "Terror", "Fantasy", "Dark Fantasy", "SciFi", "Dark SciFi",
@@ -84,40 +85,13 @@ export default async function TrendingPage({ searchParams }: Props) {
 
       <TrendingGrid stories={stories} />
 
-      <Pagination
+      <TrendingPagination
         page={page}
         hasMore={stories.length === pageSize}
         sort={sort}
         period={period}
         category={category}
       />
-    </div>
-  );
-}
-
-function Pagination({ page, hasMore, sort, period, category }: {
-  page: number; hasMore: boolean; sort: string; period: string; category: string;
-}) {
-  const base = `/trending?sort=${sort}&period=${period}${category ? `&category=${encodeURIComponent(category)}` : ""}`;
-  return (
-    <div className="flex items-center justify-center gap-4 pt-4">
-      {page > 1 && (
-        
-          href={`${base}&page=${page - 1}`}
-          className="rounded-full border border-border px-4 py-1.5 text-sm hover:bg-gray-50"
-        >
-          ← Anterior
-        </a>
-      )}
-      <span className="text-sm text-gray-500">Página {page}</span>
-      {hasMore && (
-        
-          href={`${base}&page=${page + 1}`}
-          className="rounded-full border border-border px-4 py-1.5 text-sm hover:bg-gray-50"
-        >
-          Siguiente →
-        </a>
-      )}
     </div>
   );
 }
