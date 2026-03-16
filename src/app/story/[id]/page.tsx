@@ -8,7 +8,7 @@ interface StoryPageProps {
 }
 
 export default async function StoryPage({ params }: StoryPageProps) {
-  const supabase = createServerSupabase(cookies);
+  const supabase = createServerSupabase();
 
   const { data: story, error } = await supabase
     .from("stories")
@@ -43,6 +43,15 @@ export default async function StoryPage({ params }: StoryPageProps) {
   const {
     data: { user }
   } = await supabase.auth.getUser();
+
+  // ─── Registrar vista ────────────────────────────────────────────────────
+  // Se inserta siempre que alguien abre la página.
+  // user_id es null si no está autenticado (vistas anónimas también cuentan).
+  await supabase.from("story_views").insert({
+    story_id: params.id,
+    user_id: user?.id ?? null,
+  });
+  // ────────────────────────────────────────────────────────────────────────
 
   const { data: follow } =
     user &&
@@ -187,4 +196,3 @@ export default async function StoryPage({ params }: StoryPageProps) {
     </div>
   );
 }
-
