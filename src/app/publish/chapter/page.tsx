@@ -20,7 +20,6 @@ export default function AddChapterPage() {
   const isFirst = searchParams.get("first") === "true";
   const supabase = createClient();
 
-  // Datos de la historia (para editar)
   const [storyTitle, setStoryTitle] = useState("");
   const [storyDescription, setStoryDescription] = useState("");
   const [storyCategory, setStoryCategory] = useState("");
@@ -31,7 +30,6 @@ export default function AddChapterPage() {
   const [showEditStory, setShowEditStory] = useState(false);
   const [nextChapterNumber, setNextChapterNumber] = useState(1);
 
-  // Datos del capítulo
   const [chapterTitle, setChapterTitle] = useState("");
   const [chapterContent, setChapterContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,7 +82,6 @@ export default function AddChapterPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      // Actualizar detalles de la historia si se editaron
       if (showEditStory || isFirst) {
         let coverUrl = currentCoverUrl;
 
@@ -113,7 +110,7 @@ export default function AddChapterPage() {
         if (updateError) throw updateError;
       }
 
-      // Insertar capítulo
+      // ── INSERT con author_id ─────────────────────────────────────────────
       const { error: chapterError } = await supabase
         .from("chapters")
         .insert({
@@ -121,11 +118,11 @@ export default function AddChapterPage() {
           title: chapterTitle || "Chapter " + nextChapterNumber,
           content_html: chapterContent,
           chapter_number: nextChapterNumber,
+          author_id: user.id,
         });
 
       if (chapterError) throw chapterError;
 
-      // Actualizar last_chapter_at en la historia
       await supabase
         .from("stories")
         .update({ last_chapter_at: new Date().toISOString() })
@@ -159,7 +156,6 @@ export default function AddChapterPage() {
         </div>
       </div>
 
-      {/* Botón para editar detalles de la historia (solo si no es el primero, ese ya viene editado) */}
       {!isFirst && (
         <button
           onClick={() => setShowEditStory(!showEditStory)}
@@ -171,11 +167,9 @@ export default function AddChapterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* Panel de edición de historia */}
         {(showEditStory || isFirst) && (
           <div className="rounded-2xl border border-border bg-white/70 p-6 space-y-4">
             <h2 className="text-sm font-semibold">Detalles de la historia</h2>
-
             <div className="grid gap-4 sm:grid-cols-[1fr,140px]">
               <div className="space-y-4">
                 <div className="space-y-1">
@@ -218,8 +212,6 @@ export default function AddChapterPage() {
                   />
                 </div>
               </div>
-
-              {/* Cover */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-700">Portada</label>
                 <label className="cursor-pointer block">
@@ -240,10 +232,8 @@ export default function AddChapterPage() {
           </div>
         )}
 
-        {/* Panel del capítulo */}
         <div className="rounded-2xl border border-border bg-white/70 p-6 space-y-4">
           <h2 className="text-sm font-semibold">Capítulo {nextChapterNumber}</h2>
-
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Título del capítulo</label>
             <input
@@ -253,7 +243,6 @@ export default function AddChapterPage() {
               onChange={(e) => setChapterTitle(e.target.value)}
             />
           </div>
-
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Contenido</label>
             <RichTextEditor
