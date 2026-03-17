@@ -15,5 +15,10 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["inkvoid.ink", "www.inkvoid.ink", "inkvoid.onrender.com"],
+    },
+  },
 };
 export default nextConfig;

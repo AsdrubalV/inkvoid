@@ -53,7 +53,7 @@ export default async function UserProfile({ params }: Props) {
 
       {/* Avatar + info */}
       <div className="flex items-center gap-6">
-        <div className="relative h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0">
+        <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
           {profile.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -62,9 +62,7 @@ export default async function UserProfile({ params }: Props) {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
-              👤
-            </div>
+            <span className="text-3xl text-gray-400">👤</span>
           )}
         </div>
         <div className="space-y-1">
@@ -72,27 +70,18 @@ export default async function UserProfile({ params }: Props) {
           <p className="text-gray-600 text-sm">
             {profile.bio || "This author has not written a bio yet."}
           </p>
-          {/* Links sociales */}
           <div className="flex gap-3 pt-1 text-xs text-gray-500">
             {profile.patreon_url && (
-              <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">
-                Patreon
-              </a>
+              <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>
             )}
             {profile.amazon_url && (
-              <a href={profile.amazon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">
-                Amazon
-              </a>
+              <a href={profile.amazon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Amazon</a>
             )}
             {profile.tiktok_url && (
-              <a href={profile.tiktok_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">
-                TikTok
-              </a>
+              <a href={profile.tiktok_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">TikTok</a>
             )}
             {profile.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">
-                Website
-              </a>
+              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>
             )}
           </div>
         </div>
@@ -110,7 +99,7 @@ export default async function UserProfile({ params }: Props) {
               description={s.description}
               coverUrl={s.cover_url}
               category={s.category}
-              tags={s.tags}
+              tags={Array.isArray(s.tags) ? s.tags : []}
               authorUsername={profile.username}
             />
           ))
