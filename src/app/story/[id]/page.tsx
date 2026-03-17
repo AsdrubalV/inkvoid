@@ -18,21 +18,18 @@ export default async function StoryPage({ params }: StoryPageProps) {
       cover_url,
       category,
       tags,
-      author_id,
-      profiles!stories_author_id_fkey (
-        username,
-        bio
-      )
+      author_id
     `)
     .eq("id", params.id)
     .single();
 
-  // 👇 Debug temporal — borrar después de identificar el error
-  console.log("ID recibido:", params.id);
-  console.log("Story:", story);
-  console.log("Error:", error);
-
   if (error || !story) return notFound();
+
+  const { data: authorProfile } = await supabase
+    .from("profiles")
+    .select("username, bio")
+    .eq("id", story.author_id)
+    .maybeSingle();
 
   const { data: chapters } = await supabase
     .from("chapters")
@@ -103,10 +100,10 @@ export default async function StoryPage({ params }: StoryPageProps) {
             <h1 className="text-xl font-semibold tracking-tight">{story.title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
               <Link
-                href={"/user/" + story.profiles?.username}
+                href={"/user/" + authorProfile?.username}
                 className="rounded-full border border-border px-2 py-0.5 hover:bg-gray-50"
               >
-                @{story.profiles?.username}
+                @{authorProfile?.username}
               </Link>
               {story.category && (
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px]">
@@ -149,7 +146,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
               {bookmarksCount ?? 0} Bookmark
             </button>
           </form>
-          <form action={"/profile/" + story.profiles?.username + "/follow"} method="post">
+          <form action={"/profile/" + authorProfile?.username + "/follow"} method="post">
             <button
               type="submit"
               className={"rounded-full border border-border px-3 py-1 " + (follow ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
@@ -183,7 +180,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
         <div className="rounded-xl border border-border bg-white/70 p-4 text-sm">
           <h2 className="mb-2 text-sm font-semibold">About the author</h2>
           <p className="text-xs text-gray-700">
-            {story.profiles?.bio || "This author has not written a bio yet."}
+            {authorProfile?.bio || "This author has not written a bio yet."}
           </p>
         </div>
       </aside>
