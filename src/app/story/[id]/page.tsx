@@ -114,7 +114,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
             {story.description && (
               <p className="mt-2 max-w-xl text-sm text-gray-700">{story.description}</p>
             )}
-            {(story.tags as string[])?.length ? (
+            {(Array.isArray(story.tags) && story.tags.length) ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {(story.tags as string[]).map((tag) => (
                   <span
