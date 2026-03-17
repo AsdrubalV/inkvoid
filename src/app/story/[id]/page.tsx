@@ -27,6 +27,11 @@ export default async function StoryPage({ params }: StoryPageProps) {
     .eq("id", params.id)
     .single();
 
+  // 👇 Debug temporal — borrar después de identificar el error
+  console.log("ID recibido:", params.id);
+  console.log("Story:", story);
+  console.log("Error:", error);
+
   if (error || !story) return notFound();
 
   const { data: chapters } = await supabase
