@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
-import Link from "next/link";
+import EditProfileButton from "@/components/EditProfileButton";
 
 interface Props {
   params: { username: string };
@@ -22,9 +22,6 @@ export default async function UserProfile({ params }: Props) {
 
   if (!profile) return notFound();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const isOwner = user?.id === profile.id;
-
   const { data: stories } = await supabase
     .from("stories")
     .select("id, title, description, cover_url, category, tags")
@@ -41,14 +38,8 @@ export default async function UserProfile({ params }: Props) {
         ) : (
           <div className="h-full w-full bg-gradient-to-r from-gray-800 to-gray-600" />
         )}
-        {isOwner && (
-          <Link
-            href={"/user/" + username + "/edit"}
-            className="absolute top-4 right-4 rounded-full bg-black/60 px-4 py-1.5 text-xs font-medium text-white hover:bg-black transition"
-          >
-            ✏️ Edit profile
-          </Link>
-        )}
+        {/* Botón editar — solo visible para el dueño */}
+        <EditProfileButton profileUsername={username} />
       </div>
 
       {/* Avatar + info */}
