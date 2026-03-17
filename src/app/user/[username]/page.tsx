@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
 import EditProfileButton from "@/components/EditProfileButton";
+import ManageStoriesButton from "@/components/ManageStoriesButton";
 
 interface Props {
   params: { username: string };
@@ -30,7 +31,6 @@ export default async function UserProfile({ params }: Props) {
 
   return (
     <div className="space-y-8">
-
       {/* Banner */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         {profile.banner_url ? (
@@ -38,7 +38,6 @@ export default async function UserProfile({ params }: Props) {
         ) : (
           <div className="h-full w-full bg-gradient-to-r from-gray-800 to-gray-600" />
         )}
-        {/* Botón editar — solo visible para el dueño */}
         <EditProfileButton profileUsername={username} />
       </div>
 
@@ -56,7 +55,7 @@ export default async function UserProfile({ params }: Props) {
           <p className="text-gray-600 text-sm">
             {profile.bio || "This author has not written a bio yet."}
           </p>
-          <div className="flex gap-3 pt-1 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-gray-500">
             {profile.patreon_url && (
               <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>
             )}
@@ -69,6 +68,8 @@ export default async function UserProfile({ params }: Props) {
             {profile.website_url && (
               <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>
             )}
+            {/* 👇 Botón solo visible para el dueño */}
+            <ManageStoriesButton profileUsername={username} />
           </div>
         </div>
       </div>
@@ -93,7 +94,6 @@ export default async function UserProfile({ params }: Props) {
           <p className="text-gray-500 text-sm">This author has not published stories yet.</p>
         )}
       </div>
-
     </div>
   );
 }
