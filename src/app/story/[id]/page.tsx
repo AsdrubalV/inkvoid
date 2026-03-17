@@ -22,9 +22,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
       profiles!stories_author_id_fkey (
         username,
         bio
-      ),
-      likes:story_likes(count),
-      bookmarks:story_bookmarks(count)
+      )
     `)
     .eq("id", params.id)
     .single();
@@ -39,7 +37,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Registrar vista — nunca debe romper la página
+  // Registrar vista
   try {
     await supabase.from("story_views").insert({
       story_id: params.id,
@@ -47,6 +45,18 @@ export default async function StoryPage({ params }: StoryPageProps) {
     });
   } catch (_) {}
 
+  // Conteos separados
+  const { count: likesCount } = await supabase
+    .from("story_likes")
+    .select("*", { count: "exact", head: true })
+    .eq("story_id", params.id);
+
+  const { count: bookmarksCount } = await supabase
+    .from("story_bookmarks")
+    .select("*", { count: "exact", head: true })
+    .eq("story_id", params.id);
+
+  // Estado del usuario actual
   const { data: follow } = user
     ? await supabase
         .from("follows")
@@ -74,9 +84,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
         .maybeSingle()
     : { data: null };
 
-  const likesCount = (story as any).likes?.[0]?.count ?? 0;
-  const bookmarksCount = (story as any).bookmarks?.[0]?.count ?? 0;
-
   return (
     <div className="grid gap-8 lg:grid-cols-[2.2fr,1.1fr]">
       <section className="space-y-4">
@@ -95,7 +102,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
             <h1 className="text-xl font-semibold tracking-tight">{story.title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
               <Link
-                href={`/profile/${story.profiles?.username}`}
+                href={"/user/" + story.profiles?.username}
                 className="rounded-full border border-border px-2 py-0.5 hover:bg-gray-50"
               >
                 @{story.profiles?.username}
@@ -125,32 +132,26 @@ export default async function StoryPage({ params }: StoryPageProps) {
         </div>
 
         <div className="flex gap-3 text-xs">
-          <form action={`/story/${story.id}/like`} method="post">
+          <form action={"/story/" + story.id + "/like"} method="post">
             <button
               type="submit"
-              className={`rounded-full border border-border px-3 py-1 ${
-                like ? "bg-gray-900 text-white" : "hover:bg-gray-100"
-              }`}
+              className={"rounded-full border border-border px-3 py-1 " + (like ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
             >
-              {likesCount} Like
+              {likesCount ?? 0} Like
             </button>
           </form>
-          <form action={`/story/${story.id}/bookmark`} method="post">
+          <form action={"/story/" + story.id + "/bookmark"} method="post">
             <button
               type="submit"
-              className={`rounded-full border border-border px-3 py-1 ${
-                bookmark ? "bg-gray-900 text-white" : "hover:bg-gray-100"
-              }`}
+              className={"rounded-full border border-border px-3 py-1 " + (bookmark ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
             >
-              {bookmarksCount} Bookmark
+              {bookmarksCount ?? 0} Bookmark
             </button>
           </form>
-          <form action={`/profile/${story.profiles?.username}/follow`} method="post">
+          <form action={"/profile/" + story.profiles?.username + "/follow"} method="post">
             <button
               type="submit"
-              className={`rounded-full border border-border px-3 py-1 ${
-                follow ? "bg-gray-900 text-white" : "hover:bg-gray-100"
-              }`}
+              className={"rounded-full border border-border px-3 py-1 " + (follow ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
             >
               {follow ? "Following" : "Follow author"}
             </button>
@@ -164,7 +165,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
               chapters.map((ch) => (
                 <Link
                   key={ch.id}
-                  href={`/chapter/${ch.id}`}
+                  href={"/chapter/" + ch.id}
                   className="flex items-center justify-between py-2 text-sm hover:bg-gray-50"
                 >
                   <span>{ch.chapter_number}. {ch.title}</span>
