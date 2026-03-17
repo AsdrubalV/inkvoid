@@ -16,32 +16,33 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
       title,
       content_html,
       chapter_number,
-      story:stories (
-        id,
-        title
-      )
+      story_id
     `)
     .eq("id", params.id)
     .single();
 
-  // Debug temporal
-  console.log("Chapter ID:", params.id);
-  console.log("Chapter:", chapter);
-  console.log("Error:", error);
-
   if (error || !chapter) return notFound();
 
-  await supabase.from("story_views").insert({
-    story_id: chapter.story.id
-  });
+  const { data: story } = await supabase
+    .from("stories")
+    .select("id, title")
+    .eq("id", chapter.story_id)
+    .maybeSingle();
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  try {
+    await supabase.from("story_views").insert({
+      story_id: chapter.story_id,
+      user_id: user?.id ?? null,
+    });
+  } catch (_) {}
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-2 border-b border-border pb-4">
         <div className="text-xs uppercase tracking-wide text-gray-500">
-          {chapter.story.title}
+          {story?.title}
         </div>
         <h1 className="text-xl font-semibold tracking-tight">
           {chapter.chapter_number}. {chapter.title}
