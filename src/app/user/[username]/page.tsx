@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
+import Link from "next/link";
 
 interface Props {
   params: { username: string };
@@ -13,20 +14,16 @@ export default async function UserProfile({ params }: Props) {
   const { data: profile } = await supabase
     .from("profiles")
     .select(`
-      id,
-      username,
-      bio,
-      avatar_url,
-      banner_url,
-      amazon_url,
-      patreon_url,
-      tiktok_url,
-      website_url
+      id, username, bio, avatar_url, banner_url,
+      amazon_url, patreon_url, tiktok_url, website_url
     `)
     .eq("username", username)
     .single();
 
   if (!profile) return notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = user?.id === profile.id;
 
   const { data: stories } = await supabase
     .from("stories")
@@ -40,14 +37,17 @@ export default async function UserProfile({ params }: Props) {
       {/* Banner */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         {profile.banner_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={profile.banner_url}
-            alt="banner"
-            className="h-full w-full object-cover"
-          />
+          <img src={profile.banner_url} alt="banner" className="h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full bg-gradient-to-r from-gray-800 to-gray-600" />
+        )}
+        {isOwner && (
+          <Link
+            href={"/user/" + username + "/edit"}
+            className="absolute top-4 right-4 rounded-full bg-black/60 px-4 py-1.5 text-xs font-medium text-white hover:bg-black transition"
+          >
+            ✏️ Edit profile
+          </Link>
         )}
       </div>
 
@@ -55,12 +55,7 @@ export default async function UserProfile({ params }: Props) {
       <div className="flex items-center gap-6">
         <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
           {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profile.avatar_url}
-              alt="avatar"
-              className="h-full w-full object-cover"
-            />
+            <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
           ) : (
             <span className="text-3xl text-gray-400">👤</span>
           )}
@@ -104,9 +99,7 @@ export default async function UserProfile({ params }: Props) {
             />
           ))
         ) : (
-          <p className="text-gray-500 text-sm">
-            This author has not published stories yet.
-          </p>
+          <p className="text-gray-500 text-sm">This author has not published stories yet.</p>
         )}
       </div>
 
