@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import CommentsSection from "./comments";
@@ -12,8 +11,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const { data: chapter, error } = await supabase
     .from("chapters")
-    .select(
-      `
+    .select(`
       id,
       title,
       content_html,
@@ -22,10 +20,14 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         id,
         title
       )
-    `
-    )
+    `)
     .eq("id", params.id)
     .single();
+
+  // Debug temporal
+  console.log("Chapter ID:", params.id);
+  console.log("Chapter:", chapter);
+  console.log("Error:", error);
 
   if (error || !chapter) return notFound();
 
@@ -33,9 +35,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     story_id: chapter.story.id
   });
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -47,14 +47,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           {chapter.chapter_number}. {chapter.title}
         </h1>
       </header>
-
       <article
         className="prose prose-sm max-w-none rounded-xl border border-border bg-white/70 px-5 py-4"
         dangerouslySetInnerHTML={{ __html: chapter.content_html }}
       />
-
       <CommentsSection chapterId={chapter.id} currentUserId={user?.id ?? null} />
     </div>
   );
 }
-
