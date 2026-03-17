@@ -37,7 +37,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Registrar vista
   try {
     await supabase.from("story_views").insert({
       story_id: params.id,
@@ -45,7 +44,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
     });
   } catch (_) {}
 
-  // Conteos separados
   const { count: likesCount } = await supabase
     .from("story_likes")
     .select("*", { count: "exact", head: true })
@@ -56,7 +54,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
     .select("*", { count: "exact", head: true })
     .eq("story_id", params.id);
 
-  // Estado del usuario actual
   const { data: follow } = user
     ? await supabase
         .from("follows")
@@ -90,7 +87,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
         <div className="flex gap-5">
           {story.cover_url && (
             <div className="h-44 w-32 flex-shrink-0 overflow-hidden rounded-md border border-border bg-gray-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={story.cover_url}
                 alt={story.title}
