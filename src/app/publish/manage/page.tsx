@@ -71,7 +71,14 @@ export default function ManagePage() {
   async function deleteChapter(chapterId: string, storyId: string) {
     if (!confirm("¿Seguro que quieres borrar este capítulo? Esta acción no se puede deshacer.")) return;
     setDeleting(chapterId);
-    await supabase.from("chapters").delete().eq("id", chapterId);
+
+    const { error } = await supabase.from("chapters").delete().eq("id", chapterId);
+    if (error) {
+      alert("Error al borrar el capítulo: " + error.message);
+      setDeleting(null);
+      return;
+    }
+
     setStories((prev) =>
       prev.map((s) =>
         s.id === storyId
@@ -85,8 +92,21 @@ export default function ManagePage() {
   async function deleteStory(storyId: string) {
     if (!confirm("¿Seguro que quieres borrar esta historia y TODOS sus capítulos? Esta acción no se puede deshacer.")) return;
     setDeleting(storyId);
-    await supabase.from("chapters").delete().eq("story_id", storyId);
-    await supabase.from("stories").delete().eq("id", storyId);
+
+    const { error: chaptersError } = await supabase.from("chapters").delete().eq("story_id", storyId);
+    if (chaptersError) {
+      alert("Error al borrar los capítulos: " + chaptersError.message);
+      setDeleting(null);
+      return;
+    }
+
+    const { error: storyError } = await supabase.from("stories").delete().eq("id", storyId);
+    if (storyError) {
+      alert("Error al borrar la historia: " + storyError.message);
+      setDeleting(null);
+      return;
+    }
+
     setStories((prev) => prev.filter((s) => s.id !== storyId));
     setDeleting(null);
   }
@@ -125,7 +145,6 @@ export default function ManagePage() {
         <div className="space-y-4">
           {stories.map((story) => (
             <div key={story.id} className="rounded-2xl border border-border bg-white/70 overflow-hidden">
-              {/* Cabecera de la historia */}
               <div className="flex items-center gap-4 p-4">
                 {story.cover_url ? (
                   <img src={story.cover_url} alt={story.title} className="h-16 w-11 rounded object-cover flex-shrink-0" />
@@ -167,7 +186,6 @@ export default function ManagePage() {
                 </div>
               </div>
 
-              {/* Lista de capítulos */}
               {story.expanded && (
                 <div className="border-t border-border divide-y divide-border">
                   {story.chapters?.length ? (
