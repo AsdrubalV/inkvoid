@@ -13,6 +13,11 @@ const CATEGORIES = [
   "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy", "Erotic"
 ];
 
+function countWords(html: string): number {
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return text ? text.split(" ").length : 0;
+}
+
 export default function AddChapterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +34,8 @@ export default function AddChapterPage() {
   const [currentCoverUrl, setCurrentCoverUrl] = useState<string | null>(null);
   const [showEditStory, setShowEditStory] = useState(false);
   const [nextChapterNumber, setNextChapterNumber] = useState(1);
+  const [totalWords, setTotalWords] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
 
   const [chapterTitle, setChapterTitle] = useState("");
   const [chapterContent, setChapterContent] = useState("");
@@ -36,12 +43,16 @@ export default function AddChapterPage() {
   const [loadingStory, setLoadingStory] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const PREMIUM_THRESHOLD = 20000;
+  const canSetPremium = totalWords >= PREMIUM_THRESHOLD;
+  const currentChapterWords = countWords(chapterContent);
+
   useEffect(() => {
     if (!storyId) { router.push("/publish"); return; }
     async function load() {
       const { data: story } = await supabase
         .from("stories")
-        .select("title, description, category, tags, cover_url")
+        .select("title, description, category, tags, cover_url, total_words")
         .eq("id", storyId)
         .single();
 
@@ -52,6 +63,7 @@ export default function AddChapterPage() {
         setStoryTags(Array.isArray(story.tags) ? story.tags.join(", ") : (story.tags ?? ""));
         setCurrentCoverUrl(story.cover_url ?? null);
         setCoverPreview(story.cover_url ?? null);
+        setTotalWords(story.total_words ?? 0);
       }
 
       const { data: chapters } = await supabase
@@ -110,7 +122,9 @@ export default function AddChapterPage() {
         if (updateError) throw updateError;
       }
 
-      // ── INSERT con author_id ─────────────────────────────────────────────
+      const newWordCount = currentChapterWords;
+      const newTotalWords = totalWords + newWordCount;
+
       const { error: chapterError } = await supabase
         .from("chapters")
         .insert({
@@ -119,13 +133,18 @@ export default function AddChapterPage() {
           content_html: chapterContent,
           chapter_number: nextChapterNumber,
           author_id: user.id,
+          word_count: newWordCount,
+          is_premium: canSetPremium && isPremium,
         });
 
       if (chapterError) throw chapterError;
 
       await supabase
         .from("stories")
-        .update({ last_chapter_at: new Date().toISOString() })
+        .update({
+          last_chapter_at: new Date().toISOString(),
+          total_words: newTotalWords,
+        })
         .eq("id", storyId);
 
       router.push("/story/" + storyId);
@@ -154,6 +173,28 @@ export default function AddChapterPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">{storyTitle} · Capítulo {nextChapterNumber}</p>
         </div>
+      </div>
+
+      {/* Barra de progreso hacia premium */}
+      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">Palabras publicadas</span>
+          <span className={canSetPremium ? "text-green-600 font-medium" : "text-gray-700"}>
+            {totalWords.toLocaleString()} / {PREMIUM_THRESHOLD.toLocaleString()}
+            {canSetPremium && " ✅ Habilitado para premium"}
+          </span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-gray-100">
+          <div
+            className={"h-1.5 rounded-full transition-all " + (canSetPremium ? "bg-green-500" : "bg-black")}
+            style={{ width: Math.min((totalWords / PREMIUM_THRESHOLD) * 100, 100) + "%" }}
+          />
+        </div>
+        {!canSetPremium && (
+          <p className="text-[11px] text-gray-400">
+            Te faltan {(PREMIUM_THRESHOLD - totalWords).toLocaleString()} palabras para poder publicar capítulos premium.
+          </p>
+        )}
       </div>
 
       {!isFirst && (
@@ -233,7 +274,10 @@ export default function AddChapterPage() {
         )}
 
         <div className="rounded-2xl border border-border bg-white/70 p-6 space-y-4">
-          <h2 className="text-sm font-semibold">Capítulo {nextChapterNumber}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Capítulo {nextChapterNumber}</h2>
+            <span className="text-xs text-gray-400">{currentChapterWords.toLocaleString()} palabras</span>
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Título del capítulo</label>
             <input
@@ -250,6 +294,28 @@ export default function AddChapterPage() {
               onChange={setChapterContent}
               placeholder="Escribe tu capítulo aquí..."
             />
+          </div>
+
+          {/* Toggle premium */}
+          <div className={`rounded-xl border p-4 space-y-2 ${canSetPremium ? "border-amber-200 bg-amber-50" : "border-border bg-gray-50 opacity-60"}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Capítulo premium 👑</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {canSetPremium
+                    ? "Solo los suscriptores podrán leer este capítulo."
+                    : "Disponible cuando tu historia supere 20.000 palabras."}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={!canSetPremium}
+                onClick={() => setIsPremium(!isPremium)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPremium && canSetPremium ? "bg-amber-500" : "bg-gray-200"} disabled:cursor-not-allowed`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isPremium && canSetPremium ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
           </div>
         </div>
 
