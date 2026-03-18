@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ReactNode } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthProvider } from "@/components/AuthProvider";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "InkVoid",
@@ -101,6 +102,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <main className="container py-8">
             {children}
           </main>
+          <Footer />
         </AuthProvider>
       </body>
     </html>
