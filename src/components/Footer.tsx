@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -5,7 +6,6 @@ export default function Footer() {
     <footer className="mt-16 border-t border-border bg-white/70 backdrop-blur">
       <div className="container py-10 space-y-8">
 
-        {/* Links principales */}
         <div className="grid gap-8 sm:grid-cols-3">
 
           <div className="space-y-3">
@@ -79,7 +79,6 @@ export default function Footer() {
 
         </div>
 
-        {/* Disclaimer */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
           <p>
             © {new Date().getFullYear()} InkVoid. Creado por{" "}
