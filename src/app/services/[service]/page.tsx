@@ -1,3 +1,5 @@
+import React from "react";
+
 const SERVICE_NAMES: Record<string, string> = {
   messages: "Mis mensajes",
   legal: "Servicios legales",
@@ -21,13 +23,12 @@ export default function ServicePage({ params }: Props) {
         Actualmente este servicio no está disponible.
         Estamos trabajando en esto para traértelo pronto.
       </p>
-      
-        href="#"
+      <button
         onClick={() => window.history.back()}
         className="inline-block mt-4 rounded-full border border-border px-5 py-2 text-sm hover:bg-gray-50 transition"
       >
         ← Volver
-      </a>
+      </button>
     </div>
   );
 }
