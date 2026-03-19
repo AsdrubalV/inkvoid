@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthProvider } from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
+import SearchBar from "@/components/SearchBar";
 
 export const metadata: Metadata = {
   title: "InkVoid",
@@ -18,9 +19,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const supabase = createServerSupabase();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   let username: string | null = null;
   if (user) {
@@ -37,7 +36,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
         <AuthProvider>
           <div className="border-b border-border bg-white/70 backdrop-blur">
-            <header className="container flex h-16 items-center justify-between">
+            <header className="container flex h-16 items-center justify-between gap-4">
               <div className="flex items-center gap-6">
                 <Link href="/" className="flex items-center gap-2">
                   <Image
@@ -51,15 +50,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </Link>
                 {user && (
                   <nav className="flex items-center gap-4 text-sm text-gray-700">
-                    <Link href="/trending" className="hover:text-black">
-                      Trending
-                    </Link>
-                    <Link href="/publish" className="hover:text-black">
-                      Publish
-                    </Link>
+                    <Link href="/trending" className="hover:text-black">Trending</Link>
+                    <Link href="/publish" className="hover:text-black">Publish</Link>
                   </nav>
                 )}
               </div>
+
+              {/* Barra de búsqueda — centro */}
+              <div className="flex-1 flex justify-center">
+                <SearchBar />
+              </div>
+
               <div className="flex items-center gap-4 text-sm">
                 {user ? (
                   <>
@@ -82,16 +83,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   </>
                 ) : (
                   <div className="flex gap-3">
-                    <Link
-                      href="/signup"
-                      className="rounded-full border border-border px-4 py-1.5 hover:bg-gray-50"
-                    >
+                    <Link href="/signup" className="rounded-full border border-border px-4 py-1.5 hover:bg-gray-50">
                       Sign up
                     </Link>
-                    <Link
-                      href="/login"
-                      className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
-                    >
+                    <Link href="/login" className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-800">
                       Sign in
                     </Link>
                   </div>
