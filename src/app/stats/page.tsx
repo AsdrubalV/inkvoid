@@ -20,7 +20,7 @@ export default async function StatsPage() {
         <h1 className="text-xl font-semibold text-white">Estadísticas</h1>
         <p className="text-sm text-gray-400">Aún no tienes historias publicadas.</p>
         <Link href="/publish/new" className="inline-block rounded-full bg-white px-5 py-2 text-sm font-medium text-black hover:bg-gray-100 transition">
-          Crear primera historia →
+          Crear primera historia
         </Link>
       </div>
     );
@@ -28,7 +28,6 @@ export default async function StatsPage() {
 
   const storyIds = stories.map((s) => s.id);
 
-  // Vistas totales y únicas por historia
   const { data: allViews } = await supabase
     .from("story_views")
     .select("story_id, user_id, viewed_at")
@@ -45,9 +44,8 @@ export default async function StatsPage() {
   });
 
   const totalViews = Object.values(viewsMap).reduce((a, b) => a + b, 0);
-  const totalUniqueViewers = new Set((allViews ?? []).filter(v => v.user_id).map(v => v.user_id)).size;
+  const totalUniqueViewers = new Set((allViews ?? []).filter((v) => v.user_id).map((v) => v.user_id)).size;
 
-  // Likes
   const { data: allLikes } = await supabase
     .from("story_likes")
     .select("story_id")
@@ -56,7 +54,6 @@ export default async function StatsPage() {
   (allLikes ?? []).forEach((l) => { likesMap[l.story_id] = (likesMap[l.story_id] ?? 0) + 1; });
   const totalLikes = Object.values(likesMap).reduce((a, b) => a + b, 0);
 
-  // Bookmarks
   const { data: allBookmarks } = await supabase
     .from("story_bookmarks")
     .select("story_id")
@@ -65,7 +62,6 @@ export default async function StatsPage() {
   (allBookmarks ?? []).forEach((b) => { bookmarksMap[b.story_id] = (bookmarksMap[b.story_id] ?? 0) + 1; });
   const totalBookmarks = Object.values(bookmarksMap).reduce((a, b) => a + b, 0);
 
-  // Comentarios
   const { data: allChapters } = await supabase
     .from("chapters")
     .select("id, title, chapter_number, story_id")
@@ -85,7 +81,6 @@ export default async function StatsPage() {
   });
   const totalComments = Object.values(commentsPerStory).reduce((a, b) => a + b, 0);
 
-  // Seguidores nuevos por mes
   const { data: followsData } = await supabase
     .from("follows")
     .select("created_at")
@@ -98,7 +93,6 @@ export default async function StatsPage() {
     followsMonthly[month] = (followsMonthly[month] ?? 0) + 1;
   });
 
-  // Vistas por capítulo para tasa de retención
   const { data: chapterViewsData } = await supabase
     .from("chapter_views")
     .select("chapter_id, story_id, user_id")
@@ -109,7 +103,6 @@ export default async function StatsPage() {
     chapterViewsMap[v.chapter_id] = (chapterViewsMap[v.chapter_id] ?? 0) + 1;
   });
 
-  // Promedio de capítulos leídos por lector
   const readerChapterCount: Record<string, Set<string>> = {};
   (chapterViewsData ?? []).forEach((v) => {
     if (v.user_id) {
@@ -117,11 +110,14 @@ export default async function StatsPage() {
       readerChapterCount[v.user_id].add(v.chapter_id);
     }
   });
-  const avgChaptersPerReader = Object.keys(readerChapterCount).length > 0
-    ? (Object.values(readerChapterCount).reduce((a, b) => a + b.size, 0) / Object.keys(readerChapterCount).length).toFixed(1)
-    : "0";
+  const avgChaptersPerReader =
+    Object.keys(readerChapterCount).length > 0
+      ? (
+          Object.values(readerChapterCount).reduce((a, b) => a + b.size, 0) /
+          Object.keys(readerChapterCount).length
+        ).toFixed(1)
+      : "0";
 
-  // Vistas mensuales
   const monthlyMap: Record<string, number> = {};
   (allViews ?? []).forEach((v) => {
     if (!v.viewed_at) return;
@@ -131,7 +127,6 @@ export default async function StatsPage() {
   const monthlyEntries = Object.entries(monthlyMap).slice(-6);
   const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
 
-  // Países
   const { data: countriesData } = await supabase
     .from("story_views")
     .select("country")
@@ -144,17 +139,18 @@ export default async function StatsPage() {
   const topCountries = Object.entries(countryCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const maxCountry = topCountries[0]?.[1] ?? 1;
 
-  // Comparativa entre historias
-  const storyComparison = stories.map((s) => ({
-    id: s.id,
-    title: s.title,
-    cover_url: s.cover_url,
-    views: viewsMap[s.id] ?? 0,
-    uniqueViewers: uniqueViewsMap[s.id]?.size ?? 0,
-    likes: likesMap[s.id] ?? 0,
-    bookmarks: bookmarksMap[s.id] ?? 0,
-    comments: commentsPerStory[s.id] ?? 0,
-  })).sort((a, b) => b.views - a.views);
+  const storyComparison = stories
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      cover_url: s.cover_url,
+      views: viewsMap[s.id] ?? 0,
+      uniqueViewers: uniqueViewsMap[s.id]?.size ?? 0,
+      likes: likesMap[s.id] ?? 0,
+      bookmarks: bookmarksMap[s.id] ?? 0,
+      comments: commentsPerStory[s.id] ?? 0,
+    }))
+    .sort((a, b) => b.views - a.views);
 
   const maxViews = Math.max(...storyComparison.map((s) => s.views), 1);
 
@@ -162,22 +158,20 @@ export default async function StatsPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-5xl space-y-6 py-8 px-4">
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
             <p className="text-sm text-gray-400 mt-0.5">Solo visible para ti</p>
           </div>
           <Link href="/publish/manage" className="text-sm text-gray-400 hover:text-white transition">
-            ← Panel
+            Panel
           </Link>
         </div>
 
-        {/* KPIs globales */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Vistas totales", value: totalViews.toLocaleString(), sub: `${totalUniqueViewers.toLocaleString()} únicos` },
-            { label: "Likes", value: totalLikes.toLocaleString(), sub: `${totalBookmarks.toLocaleString()} guardados` },
+            { label: "Vistas totales", value: totalViews.toLocaleString(), sub: totalUniqueViewers.toLocaleString() + " únicos" },
+            { label: "Likes", value: totalLikes.toLocaleString(), sub: totalBookmarks.toLocaleString() + " guardados" },
             { label: "Comentarios", value: totalComments.toLocaleString(), sub: "en todos los capítulos" },
             { label: "Caps. por lector", value: avgChaptersPerReader, sub: "promedio" },
           ].map((kpi) => (
@@ -191,7 +185,6 @@ export default async function StatsPage() {
 
         <div className="grid lg:grid-cols-2 gap-4">
 
-          {/* Gráfico vistas mensuales */}
           <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold">Vistas mensuales</h2>
@@ -215,7 +208,6 @@ export default async function StatsPage() {
             )}
           </div>
 
-          {/* Seguidores nuevos por mes */}
           <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold">Nuevos seguidores</h2>
@@ -223,19 +215,21 @@ export default async function StatsPage() {
             </div>
             {Object.keys(followsMonthly).length > 0 ? (
               <div className="flex items-end gap-2 h-28">
-                {Object.entries(followsMonthly).slice(-6).map(([month, count]) => {
-                  const maxF = Math.max(...Object.values(followsMonthly), 1);
-                  return (
-                    <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-gray-400">{count}</span>
-                      <div
-                        className="w-full rounded-t bg-emerald-500 transition-all"
-                        style={{ height: Math.max((count / maxF) * 96, 4) + "px" }}
-                      />
-                      <span className="text-[10px] text-gray-500">{month}</span>
-                    </div>
-                  );
-                })}
+                {Object.entries(followsMonthly)
+                  .slice(-6)
+                  .map(([month, count]) => {
+                    const maxF = Math.max(...Object.values(followsMonthly), 1);
+                    return (
+                      <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-[10px] text-gray-400">{count}</span>
+                        <div
+                          className="w-full rounded-t bg-emerald-500 transition-all"
+                          style={{ height: Math.max((count / maxF) * 96, 4) + "px" }}
+                        />
+                        <span className="text-[10px] text-gray-500">{month}</span>
+                      </div>
+                    );
+                  })}
               </div>
             ) : (
               <p className="text-sm text-gray-500 py-8 text-center">Sin datos aún</p>
@@ -246,7 +240,6 @@ export default async function StatsPage() {
 
         <div className="grid lg:grid-cols-2 gap-4">
 
-          {/* Países */}
           <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold">Top países</h2>
@@ -261,7 +254,10 @@ export default async function StatsPage() {
                       <span className="text-gray-400">{count}</span>
                     </div>
                     <div className="h-1 w-full rounded-full bg-gray-800">
-                      <div className="h-1 rounded-full bg-indigo-400" style={{ width: (count / maxCountry) * 100 + "%" }} />
+                      <div
+                        className="h-1 rounded-full bg-indigo-400"
+                        style={{ width: (count / maxCountry) * 100 + "%" }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -271,7 +267,6 @@ export default async function StatsPage() {
             )}
           </div>
 
-          {/* Comparativa entre historias */}
           <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold">Comparativa de historias</h2>
@@ -285,7 +280,10 @@ export default async function StatsPage() {
                     <span className="text-gray-400">{s.views} vistas</span>
                   </div>
                   <div className="h-1 w-full rounded-full bg-gray-800">
-                    <div className="h-1 rounded-full bg-violet-400" style={{ width: (s.views / maxViews) * 100 + "%" }} />
+                    <div
+                      className="h-1 rounded-full bg-violet-400"
+                      style={{ width: (s.views / maxViews) * 100 + "%" }}
+                    />
                   </div>
                 </div>
               ))}
@@ -294,7 +292,6 @@ export default async function StatsPage() {
 
         </div>
 
-        {/* Tasa de retención por historia */}
         <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-6">
           <div>
             <h2 className="text-sm font-semibold">Tasa de retención por capítulo</h2>
@@ -305,4 +302,67 @@ export default async function StatsPage() {
             if (!storyChapters.length) return null;
             const ch1Views = chapterViewsMap[storyChapters[0]?.id] ?? 1;
             return (
-              <div key={story.id} className="space-y-3"></div>
+              <div key={story.id} className="space-y-3">
+                <p className="text-xs font-medium text-gray-300 uppercase tracking-wider">{story.title}</p>
+                <div className="space-y-2">
+                  {storyChapters.map((ch) => {
+                    const views = chapterViewsMap[ch.id] ?? 0;
+                    const pct = Math.round((views / ch1Views) * 100);
+                    return (
+                      <div key={ch.id} className="flex items-center gap-3">
+                        <span className="text-[11px] text-gray-500 w-6 text-right">{ch.chapter_number}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-gray-800">
+                          <div
+                            className="h-1.5 rounded-full bg-amber-400 transition-all"
+                            style={{ width: Math.min(pct, 100) + "%" }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-gray-400 w-10 text-right">{pct}%</span>
+                        <span className="text-[11px] text-gray-600 w-12 text-right">{views} v.</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-gray-300">Detalle por historia</h2>
+          <div className="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-4 py-3">Historia</th>
+                  <th className="text-right px-4 py-3">Vistas</th>
+                  <th className="text-right px-4 py-3">Únicos</th>
+                  <th className="text-right px-4 py-3">Likes</th>
+                  <th className="text-right px-4 py-3">Guardados</th>
+                  <th className="text-right px-4 py-3">Comentarios</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {storyComparison.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-800/50 transition">
+                    <td className="px-4 py-3">
+                      <Link href={"/story/" + s.id} className="text-white hover:text-indigo-400 transition truncate block max-w-[200px]">
+                        {s.title}
+                      </Link>
+                    </td>
+                    <td className="text-right px-4 py-3 text-gray-300">{s.views.toLocaleString()}</td>
+                    <td className="text-right px-4 py-3 text-gray-300">{s.uniqueViewers.toLocaleString()}</td>
+                    <td className="text-right px-4 py-3 text-gray-300">{s.likes.toLocaleString()}</td>
+                    <td className="text-right px-4 py-3 text-gray-300">{s.bookmarks.toLocaleString()}</td>
+                    <td className="text-right px-4 py-3 text-gray-300">{s.comments.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
