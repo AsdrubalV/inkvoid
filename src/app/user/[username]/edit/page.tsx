@@ -1,247 +1,133 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { notFound } from "next/navigation";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { StoryCard } from "@/components/StoryCard";
+import EditProfileButton from "@/components/EditProfileButton";
+import ManageStoriesButton from "@/components/ManageStoriesButton";
+import ProfileMessages from "@/components/ProfileMessages";
 
-export default function EditProfilePage() {
-  const router = useRouter();
-  const params = useParams();
-  const username = params.username as string;
-  const supabase = createClient();
+interface Props {
+  params: { username: string };
+}
 
-  const [bio, setBio] = useState("");
-  const [amazonUrl, setAmazonUrl] = useState("");
-  const [patreonUrl, setPatreonUrl] = useState("");
-  const [tiktokUrl, setTiktokUrl] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+export default async function UserProfile({ params }: Props) {
+  const supabase = createServerSupabase();
+  const username = params.username;
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(`
+      id, username, bio, avatar_url, banner_url,
+      amazon_url, patreon_url, tiktok_url, website_url
+    `)
+    .eq("username", username)
+    .single();
 
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  if (!profile) return notFound();
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("id, title, description, cover_url, category, tags")
+    .eq("author_id", profile.id)
+    .order("created_at", { ascending: false });
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, username, bio, avatar_url, banner_url, amazon_url, patreon_url, tiktok_url, website_url")
-        .eq("username", username)
-        .single();
+  const { data: { user } } = await supabase.auth.getUser();
 
-      if (!profile || profile.id !== user.id) {
-        router.push("/user/" + username);
-        return;
-      }
+  let currentUserId: string | null = null;
+  let isOwner = false;
 
-      setUserId(user.id);
-      setBio(profile.bio ?? "");
-      setAmazonUrl(profile.amazon_url ?? "");
-      setPatreonUrl(profile.patreon_url ?? "");
-      setTiktokUrl(profile.tiktok_url ?? "");
-      setWebsiteUrl(profile.website_url ?? "");
-      setAvatarPreview(profile.avatar_url ?? null);
-      setBannerPreview(profile.banner_url ?? null);
-      setLoadingData(false);
-    }
-    load();
-  }, [username]);
-
-  function handleFileChange(
-    e: React.ChangeEvent<HTMLInputElement>,
-    setFile: (f: File | null) => void,
-    setPreview: (s: string | null) => void
-  ) {
-    const file = e.target.files?.[0] ?? null;
-    setFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
-  }
-
-  async function uploadImage(file: File, folder: string): Promise<string> {
-    const ext = file.name.split(".").pop();
-    const path = folder + "/" + userId + "/" + crypto.randomUUID() + "." + ext;
-    const { data, error } = await supabase.storage
-      .from("covers")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-    if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from("covers").getPublicUrl(data.path);
-    return publicUrl;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const updates: Record<string, string> = {
-        bio,
-        amazon_url: amazonUrl,
-        patreon_url: patreonUrl,
-        tiktok_url: tiktokUrl,
-        website_url: websiteUrl,
-      };
-
-      if (avatarFile) {
-        updates.avatar_url = await uploadImage(avatarFile, "avatars");
-      }
-      if (bannerFile) {
-        updates.banner_url = await uploadImage(bannerFile, "banners");
-      }
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
-
-      router.push("/user/" + username);
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message ?? "Error al guardar");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (loadingData) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-gray-400">Cargando...</p>
-      </div>
-    );
+  if (user) {
+    currentUserId = user.id;
+    const { data: myProfile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    isOwner = myProfile?.username === username;
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 py-8">
-      <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-black">
-          ← Volver
-        </button>
-        <h1 className="text-2xl font-semibold tracking-tight">Edit profile</h1>
+    <div className="space-y-8">
+      {/* Banner */}
+      <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
+        {profile.banner_url ? (
+          <img src={profile.banner_url} alt="banner" className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-r from-gray-800 to-gray-600" />
+        )}
+        <EditProfileButton profileUsername={username} />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Layout dos columnas */}
+      <div className="grid gap-8 lg:grid-cols-[1fr,260px]">
 
-        {/* Banner */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-700">Banner</label>
-          <label className="cursor-pointer block">
-            <div className="relative h-40 w-full overflow-hidden rounded-xl border-2 border-dashed border-border bg-gray-50 hover:border-black transition flex items-center justify-center">
-              {bannerPreview ? (
-                <img src={bannerPreview} alt="banner preview" className="h-full w-full object-cover" />
+        {/* Columna izquierda */}
+        <div className="space-y-8">
+          {/* Avatar + info */}
+          <div className="flex items-center gap-6">
+            <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
               ) : (
-                <div className="text-center space-y-1">
-                  <p className="text-2xl">🖼️</p>
-                  <p className="text-xs text-gray-400">Click para subir banner</p>
-                </div>
+                <span className="text-3xl text-gray-400">👤</span>
               )}
             </div>
-            <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setBannerFile, setBannerPreview)} className="hidden" />
-          </label>
-        </div>
-
-        {/* Avatar */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-700">Foto de perfil</label>
-          <label className="cursor-pointer block w-fit">
-            <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-border bg-gray-50 hover:border-black transition flex items-center justify-center">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="avatar preview" className="h-full w-full object-cover rounded-full" />
-              ) : (
-                <span className="text-2xl">👤</span>
-              )}
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold">@{profile.username}</h1>
+              <p className="text-gray-600 text-sm">
+                {profile.bio || "This author has not written a bio yet."}
+              </p>
+              <div className="flex flex-wrap gap-3 pt-1 text-xs text-gray-500">
+                {profile.patreon_url && (
+                  <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>
+                )}
+                {profile.amazon_url && (
+                  <a href={profile.amazon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Amazon</a>
+                )}
+                {profile.tiktok_url && (
+                  <a href={profile.tiktok_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">TikTok</a>
+                )}
+                {profile.website_url && (
+                  <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>
+                )}
+              </div>
             </div>
-            <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setAvatarFile, setAvatarPreview)} className="hidden" />
-          </label>
-          <p className="text-[11px] text-gray-400">Click en la imagen para cambiarla</p>
-        </div>
+          </div>
 
-        {/* Bio */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-700">Bio</label>
-          <textarea
-            className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-            rows={4}
-            placeholder="Cuéntanos sobre ti..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
+          {/* Historias */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Stories</h2>
+            {stories?.length ? (
+              stories.map((s: any) => (
+                <StoryCard
+                  key={s.id}
+                  id={s.id}
+                  title={s.title}
+                  description={s.description}
+                  coverUrl={s.cover_url}
+                  category={s.category}
+                  tags={Array.isArray(s.tags) ? s.tags : []}
+                  authorUsername={profile.username}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">This author has not published stories yet.</p>
+            )}
+          </div>
+
+          {/* Tablón de mensajes */}
+          <ProfileMessages
+            profileId={profile.id}
+            currentUserId={currentUserId}
+            isOwner={isOwner}
           />
         </div>
 
-        {/* Links */}
-        <div className="space-y-3 rounded-xl border border-border bg-white/70 p-4">
-          <h2 className="text-sm font-semibold">Links</h2>
+        {/* Columna derecha */}
+        <aside className="space-y-4">
+          <ManageStoriesButton profileUsername={username} />
+        </aside>
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700">Patreon</label>
-            <input
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-              placeholder="https://patreon.com/tu-usuario"
-              value={patreonUrl}
-              onChange={(e) => setPatreonUrl(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700">Amazon</label>
-            <input
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-              placeholder="https://amazon.com/author/tu-usuario"
-              value={amazonUrl}
-              onChange={(e) => setAmazonUrl(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700">TikTok</label>
-            <input
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-              placeholder="https://tiktok.com/@tu-usuario"
-              value={tiktokUrl}
-              onChange={(e) => setTiktokUrl(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700">Website</label>
-            <input
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-              placeholder="https://tu-sitio.com"
-              value={websiteUrl}
-              onChange={(e) => setWebsiteUrl(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
-          >
-            {loading ? "Guardando..." : "Guardar cambios"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-full border border-border px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-        </div>
-
-      </form>
+      </div>
     </div>
   );
 }
