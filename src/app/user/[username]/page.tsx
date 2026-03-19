@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { StoryCard } from "@/components/StoryCard";
 import EditProfileButton from "@/components/EditProfileButton";
 import ManageStoriesButton from "@/components/ManageStoriesButton";
+import ProfileMessages from "@/components/ProfileMessages";
 
 interface Props {
   params: { username: string };
@@ -28,6 +29,21 @@ export default async function UserProfile({ params }: Props) {
     .select("id, title, description, cover_url, category, tags")
     .eq("author_id", profile.id)
     .order("created_at", { ascending: false });
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let currentUserId: string | null = null;
+  let isOwner = false;
+
+  if (user) {
+    currentUserId = user.id;
+    const { data: myProfile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    isOwner = myProfile?.username === username;
+  }
 
   return (
     <div className="space-y-8">
@@ -97,9 +113,16 @@ export default async function UserProfile({ params }: Props) {
               <p className="text-gray-500 text-sm">This author has not published stories yet.</p>
             )}
           </div>
+
+          {/* Tablón de mensajes */}
+          <ProfileMessages
+            profileId={profile.id}
+            currentUserId={currentUserId}
+            isOwner={isOwner}
+          />
         </div>
 
-        {/* Columna derecha — solo visible para el dueño */}
+        {/* Columna derecha */}
         <aside className="space-y-4">
           <ManageStoriesButton profileUsername={username} />
         </aside>
