@@ -1,10 +1,22 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import CommentsSection from "./comments";
 
 interface ChapterPageProps {
   params: { id: string };
+}
+
+async function getCountryFromIP(ip: string): Promise<string | null> {
+  try {
+    if (!ip || ip === "127.0.0.1" || ip === "::1") return null;
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=country`, { next: { revalidate: 86400 } });
+    const data = await res.json();
+    return data.country ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
@@ -26,7 +38,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Verificar suscripción activa
   let hasSubscription = false;
   if (user && chapter.is_premium) {
     const { data: sub } = await supabase
@@ -40,10 +51,31 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const isLocked = chapter.is_premium && !hasSubscription;
 
+  // Capturar IP y país
+  const headersList = headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    "unknown";
+
+  const country = await getCountryFromIP(ip);
+
+  // Registrar vista de historia
   try {
     await supabase.from("story_views").insert({
       story_id: chapter.story_id,
       user_id: user?.id ?? null,
+      country,
+    });
+  } catch (_) {}
+
+  // Registrar vista de capítulo
+  try {
+    await supabase.from("chapter_views").insert({
+      chapter_id: chapter.id,
+      story_id: chapter.story_id,
+      user_id: user?.id ?? null,
+      country,
     });
   } catch (_) {}
 
@@ -74,24 +106,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             {user ? (
-              <Link
-                href="/subscribe"
-                className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition"
-              >
+              <Link href="/subscribe" className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition">
                 Suscribirme ahora
               </Link>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition"
-                >
+                <Link href="/login" className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition">
                   Iniciar sesión
                 </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-full border border-border px-6 py-2 text-sm hover:bg-gray-50 transition"
-                >
+                <Link href="/signup" className="rounded-full border border-border px-6 py-2 text-sm hover:bg-gray-50 transition">
                   Crear cuenta
                 </Link>
               </>

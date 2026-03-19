@@ -27,8 +27,6 @@ export default function ManageStoriesButton({ profileUsername }: Props) {
 
   return (
     <div className="space-y-4">
-
-      {/* Panel de autor */}
       <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
         <h2 className="text-sm font-semibold">Panel de autor</h2>
         <p className="text-xs text-gray-500">Gestiona tu contenido publicado.</p>
@@ -42,10 +40,12 @@ export default function ManageStoriesButton({ profileUsername }: Props) {
           <Link href="/publish" className="flex items-center gap-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
             📄 Nuevo capítulo
           </Link>
+          <Link href="/stats" className="flex items-center gap-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
+            📊 Estadísticas
+          </Link>
         </div>
       </div>
 
-      {/* Servicios */}
       <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
         <h2 className="text-sm font-semibold">Servicios</h2>
         <div className="space-y-2">
@@ -66,7 +66,6 @@ export default function ManageStoriesButton({ profileUsername }: Props) {
           </Link>
         </div>
       </div>
-
     </div>
   );
 }
