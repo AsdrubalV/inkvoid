@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -8,20 +8,18 @@ export default async function StatsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Historias del autor
   const { data: stories } = await supabase
     .from("stories")
-    .select("id, title, cover_url")
+    .select("id, title, cover_url, created_at")
     .eq("author_id", user.id)
     .order("created_at", { ascending: false });
 
   if (!stories?.length) {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center space-y-4">
-        <p className="text-4xl">📊</p>
-        <h1 className="text-xl font-semibold">Estadísticas</h1>
-        <p className="text-sm text-gray-500">Aún no tienes historias publicadas.</p>
-        <Link href="/publish/new" className="inline-block rounded-full bg-black px-5 py-2 text-sm text-white hover:bg-gray-800 transition">
+        <h1 className="text-xl font-semibold text-white">Estadísticas</h1>
+        <p className="text-sm text-gray-400">Aún no tienes historias publicadas.</p>
+        <Link href="/publish/new" className="inline-block rounded-full bg-white px-5 py-2 text-sm font-medium text-black hover:bg-gray-100 transition">
           Crear primera historia →
         </Link>
       </div>
@@ -30,43 +28,80 @@ export default async function StatsPage() {
 
   const storyIds = stories.map((s) => s.id);
 
-  // Vistas totales por historia
-  const { data: viewsByStory } = await supabase
+  // Vistas totales y únicas por historia
+  const { data: allViews } = await supabase
     .from("story_views")
-    .select("story_id")
+    .select("story_id, user_id, viewed_at")
     .in("story_id", storyIds);
 
   const viewsMap: Record<string, number> = {};
-  (viewsByStory ?? []).forEach((v) => {
+  const uniqueViewsMap: Record<string, Set<string>> = {};
+  (allViews ?? []).forEach((v) => {
     viewsMap[v.story_id] = (viewsMap[v.story_id] ?? 0) + 1;
+    if (v.user_id) {
+      if (!uniqueViewsMap[v.story_id]) uniqueViewsMap[v.story_id] = new Set();
+      uniqueViewsMap[v.story_id].add(v.user_id);
+    }
   });
 
-  // Likes por historia
-  const { data: likesByStory } = await supabase
+  const totalViews = Object.values(viewsMap).reduce((a, b) => a + b, 0);
+  const totalUniqueViewers = new Set((allViews ?? []).filter(v => v.user_id).map(v => v.user_id)).size;
+
+  // Likes
+  const { data: allLikes } = await supabase
     .from("story_likes")
     .select("story_id")
     .in("story_id", storyIds);
-
   const likesMap: Record<string, number> = {};
-  (likesByStory ?? []).forEach((l) => {
-    likesMap[l.story_id] = (likesMap[l.story_id] ?? 0) + 1;
-  });
+  (allLikes ?? []).forEach((l) => { likesMap[l.story_id] = (likesMap[l.story_id] ?? 0) + 1; });
+  const totalLikes = Object.values(likesMap).reduce((a, b) => a + b, 0);
 
-  // Bookmarks por historia
-  const { data: bookmarksByStory } = await supabase
+  // Bookmarks
+  const { data: allBookmarks } = await supabase
     .from("story_bookmarks")
     .select("story_id")
     .in("story_id", storyIds);
-
   const bookmarksMap: Record<string, number> = {};
-  (bookmarksByStory ?? []).forEach((b) => {
-    bookmarksMap[b.story_id] = (bookmarksMap[b.story_id] ?? 0) + 1;
+  (allBookmarks ?? []).forEach((b) => { bookmarksMap[b.story_id] = (bookmarksMap[b.story_id] ?? 0) + 1; });
+  const totalBookmarks = Object.values(bookmarksMap).reduce((a, b) => a + b, 0);
+
+  // Comentarios
+  const { data: allChapters } = await supabase
+    .from("chapters")
+    .select("id, title, chapter_number, story_id")
+    .in("story_id", storyIds)
+    .order("chapter_number", { ascending: true });
+
+  const chapterIds = (allChapters ?? []).map((c) => c.id);
+
+  const { data: allComments } = chapterIds.length
+    ? await supabase.from("comments").select("chapter_id, created_at").in("chapter_id", chapterIds)
+    : { data: [] };
+
+  const commentsPerStory: Record<string, number> = {};
+  (allComments ?? []).forEach((c) => {
+    const ch = (allChapters ?? []).find((ch) => ch.id === c.chapter_id);
+    if (ch) commentsPerStory[ch.story_id] = (commentsPerStory[ch.story_id] ?? 0) + 1;
+  });
+  const totalComments = Object.values(commentsPerStory).reduce((a, b) => a + b, 0);
+
+  // Seguidores nuevos por mes
+  const { data: followsData } = await supabase
+    .from("follows")
+    .select("created_at")
+    .eq("author_id", user.id)
+    .gte("created_at", new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString());
+
+  const followsMonthly: Record<string, number> = {};
+  (followsData ?? []).forEach((f) => {
+    const month = new Date(f.created_at).toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    followsMonthly[month] = (followsMonthly[month] ?? 0) + 1;
   });
 
-  // Vistas por capítulo
+  // Vistas por capítulo para tasa de retención
   const { data: chapterViewsData } = await supabase
     .from("chapter_views")
-    .select("chapter_id, story_id")
+    .select("chapter_id, story_id, user_id")
     .in("story_id", storyIds);
 
   const chapterViewsMap: Record<string, number> = {};
@@ -74,160 +109,200 @@ export default async function StatsPage() {
     chapterViewsMap[v.chapter_id] = (chapterViewsMap[v.chapter_id] ?? 0) + 1;
   });
 
-  // Capítulos por historia
-  const { data: chapters } = await supabase
-    .from("chapters")
-    .select("id, title, chapter_number, story_id")
-    .in("story_id", storyIds)
-    .order("chapter_number", { ascending: true });
+  // Promedio de capítulos leídos por lector
+  const readerChapterCount: Record<string, Set<string>> = {};
+  (chapterViewsData ?? []).forEach((v) => {
+    if (v.user_id) {
+      if (!readerChapterCount[v.user_id]) readerChapterCount[v.user_id] = new Set();
+      readerChapterCount[v.user_id].add(v.chapter_id);
+    }
+  });
+  const avgChaptersPerReader = Object.keys(readerChapterCount).length > 0
+    ? (Object.values(readerChapterCount).reduce((a, b) => a + b.size, 0) / Object.keys(readerChapterCount).length).toFixed(1)
+    : "0";
 
-  // País de origen — top 5
+  // Vistas mensuales
+  const monthlyMap: Record<string, number> = {};
+  (allViews ?? []).forEach((v) => {
+    if (!v.viewed_at) return;
+    const month = new Date(v.viewed_at).toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    monthlyMap[month] = (monthlyMap[month] ?? 0) + 1;
+  });
+  const monthlyEntries = Object.entries(monthlyMap).slice(-6);
+  const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
+
+  // Países
   const { data: countriesData } = await supabase
     .from("story_views")
     .select("country")
     .in("story_id", storyIds)
     .not("country", "is", null);
-
   const countryCount: Record<string, number> = {};
   (countriesData ?? []).forEach((v) => {
     if (v.country) countryCount[v.country] = (countryCount[v.country] ?? 0) + 1;
   });
-  const topCountries = Object.entries(countryCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  // Crecimiento mensual — últimos 6 meses
-  const { data: monthlyViews } = await supabase
-    .from("story_views")
-    .select("viewed_at")
-    .in("story_id", storyIds)
-    .gte("viewed_at", new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString());
-
-  const monthlyMap: Record<string, number> = {};
-  (monthlyViews ?? []).forEach((v) => {
-    const month = new Date(v.viewed_at).toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
-    monthlyMap[month] = (monthlyMap[month] ?? 0) + 1;
-  });
-  const monthlyEntries = Object.entries(monthlyMap).slice(-6);
-
-  const totalViews = Object.values(viewsMap).reduce((a, b) => a + b, 0);
-  const totalLikes = Object.values(likesMap).reduce((a, b) => a + b, 0);
-  const totalBookmarks = Object.values(bookmarksMap).reduce((a, b) => a + b, 0);
-  const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
+  const topCountries = Object.entries(countryCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const maxCountry = topCountries[0]?.[1] ?? 1;
 
+  // Comparativa entre historias
+  const storyComparison = stories.map((s) => ({
+    id: s.id,
+    title: s.title,
+    cover_url: s.cover_url,
+    views: viewsMap[s.id] ?? 0,
+    uniqueViewers: uniqueViewsMap[s.id]?.size ?? 0,
+    likes: likesMap[s.id] ?? 0,
+    bookmarks: bookmarksMap[s.id] ?? 0,
+    comments: commentsPerStory[s.id] ?? 0,
+  })).sort((a, b) => b.views - a.views);
+
+  const maxViews = Math.max(...storyComparison.map((s) => s.views), 1);
+
   return (
-    <div className="mx-auto max-w-3xl space-y-8 py-8">
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="mx-auto max-w-5xl space-y-6 py-8 px-4">
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">📊 Estadísticas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Solo tú puedes ver estos datos</p>
-        </div>
-        <Link href="/publish/manage" className="text-sm text-gray-500 hover:text-black transition">
-          ← Mis historias
-        </Link>
-      </div>
-
-      {/* Totales globales */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Vistas totales", value: totalViews, emoji: "👁️" },
-          { label: "Likes totales", value: totalLikes, emoji: "❤️" },
-          { label: "Guardados", value: totalBookmarks, emoji: "🔖" },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-border bg-white/70 p-4 text-center space-y-1">
-            <p className="text-2xl">{stat.emoji}</p>
-            <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
-            <p className="text-xs text-gray-500">{stat.label}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Solo visible para ti</p>
           </div>
-        ))}
-      </div>
+          <Link href="/publish/manage" className="text-sm text-gray-400 hover:text-white transition">
+            ← Panel
+          </Link>
+        </div>
 
-      {/* Crecimiento mensual */}
-      {monthlyEntries.length > 0 && (
-        <div className="rounded-xl border border-border bg-white/70 p-5 space-y-4">
-          <h2 className="text-sm font-semibold">📈 Vistas últimos 6 meses</h2>
-          <div className="flex items-end gap-2 h-32">
-            {monthlyEntries.map(([month, count]) => (
-              <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] text-gray-500">{count}</span>
-                <div
-                  className="w-full rounded-t bg-black transition-all"
-                  style={{ height: Math.max((count / maxMonthly) * 96, 4) + "px" }}
-                />
-                <span className="text-[10px] text-gray-400">{month}</span>
+        {/* KPIs globales */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Vistas totales", value: totalViews.toLocaleString(), sub: `${totalUniqueViewers.toLocaleString()} únicos` },
+            { label: "Likes", value: totalLikes.toLocaleString(), sub: `${totalBookmarks.toLocaleString()} guardados` },
+            { label: "Comentarios", value: totalComments.toLocaleString(), sub: "en todos los capítulos" },
+            { label: "Caps. por lector", value: avgChaptersPerReader, sub: "promedio" },
+          ].map((kpi) => (
+            <div key={kpi.label} className="rounded-xl bg-gray-900 border border-gray-800 p-4 space-y-1">
+              <p className="text-xs text-gray-400 uppercase tracking-wider">{kpi.label}</p>
+              <p className="text-3xl font-bold">{kpi.value}</p>
+              <p className="text-xs text-gray-500">{kpi.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+
+          {/* Gráfico vistas mensuales */}
+          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold">Vistas mensuales</h2>
+              <p className="text-xs text-gray-500">Últimos 6 meses</p>
+            </div>
+            {monthlyEntries.length > 0 ? (
+              <div className="flex items-end gap-2 h-28">
+                {monthlyEntries.map(([month, count]) => (
+                  <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-gray-400">{count}</span>
+                    <div
+                      className="w-full rounded-t bg-indigo-500 transition-all"
+                      style={{ height: Math.max((count / maxMonthly) * 96, 4) + "px" }}
+                    />
+                    <span className="text-[10px] text-gray-500">{month}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <p className="text-sm text-gray-500 py-8 text-center">Sin datos aún</p>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* País de origen */}
-      {topCountries.length > 0 && (
-        <div className="rounded-xl border border-border bg-white/70 p-5 space-y-4">
-          <h2 className="text-sm font-semibold">🌍 Top países de lectores</h2>
-          <div className="space-y-2">
-            {topCountries.map(([country, count]) => (
-              <div key={country} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-700">{country}</span>
-                  <span className="text-gray-500">{count} vistas</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-gray-100">
-                  <div
-                    className="h-1.5 rounded-full bg-black transition-all"
-                    style={{ width: (count / maxCountry) * 100 + "%" }}
-                  />
-                </div>
+          {/* Seguidores nuevos por mes */}
+          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold">Nuevos seguidores</h2>
+              <p className="text-xs text-gray-500">Últimos 6 meses</p>
+            </div>
+            {Object.keys(followsMonthly).length > 0 ? (
+              <div className="flex items-end gap-2 h-28">
+                {Object.entries(followsMonthly).slice(-6).map(([month, count]) => {
+                  const maxF = Math.max(...Object.values(followsMonthly), 1);
+                  return (
+                    <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-gray-400">{count}</span>
+                      <div
+                        className="w-full rounded-t bg-emerald-500 transition-all"
+                        style={{ height: Math.max((count / maxF) * 96, 4) + "px" }}
+                      />
+                      <span className="text-[10px] text-gray-500">{month}</span>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            ) : (
+              <p className="text-sm text-gray-500 py-8 text-center">Sin datos aún</p>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* Por historia */}
-      <div className="space-y-4">
-        <h2 className="text-sm font-semibold">📚 Por historia</h2>
-        {stories.map((story) => {
-          const storyChapters = (chapters ?? []).filter((c) => c.story_id === story.id);
-          return (
-            <div key={story.id} className="rounded-xl border border-border bg-white/70 overflow-hidden">
-              <div className="flex items-center gap-4 p-4 border-b border-border">
-                {story.cover_url ? (
-                  <img src={story.cover_url} alt={story.title} className="h-14 w-10 rounded object-cover flex-shrink-0" />
-                ) : (
-                  <div className="h-14 w-10 rounded bg-gray-100 flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate text-sm">{story.title}</p>
-                  <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                    <span>👁️ {(viewsMap[story.id] ?? 0).toLocaleString()} vistas</span>
-                    <span>❤️ {(likesMap[story.id] ?? 0).toLocaleString()} likes</span>
-                    <span>🔖 {(bookmarksMap[story.id] ?? 0).toLocaleString()} guardados</span>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+
+          {/* Países */}
+          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold">Top países</h2>
+              <p className="text-xs text-gray-500">Por vistas de historia</p>
+            </div>
+            {topCountries.length > 0 ? (
+              <div className="space-y-3">
+                {topCountries.map(([country, count]) => (
+                  <div key={country} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">{country}</span>
+                      <span className="text-gray-400">{count}</span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-gray-800">
+                      <div className="h-1 rounded-full bg-indigo-400" style={{ width: (count / maxCountry) * 100 + "%" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 py-4 text-center">Sin datos de país aún</p>
+            )}
+          </div>
+
+          {/* Comparativa entre historias */}
+          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold">Comparativa de historias</h2>
+              <p className="text-xs text-gray-500">Por vistas totales</p>
+            </div>
+            <div className="space-y-3">
+              {storyComparison.map((s) => (
+                <div key={s.id} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-300 truncate max-w-[70%]">{s.title}</span>
+                    <span className="text-gray-400">{s.views} vistas</span>
+                  </div>
+                  <div className="h-1 w-full rounded-full bg-gray-800">
+                    <div className="h-1 rounded-full bg-violet-400" style={{ width: (s.views / maxViews) * 100 + "%" }} />
                   </div>
                 </div>
-              </div>
-
-              {storyChapters.length > 0 && (
-                <div className="divide-y divide-border">
-                  {storyChapters.map((ch) => (
-                    <div key={ch.id} className="flex items-center justify-between px-4 py-2">
-                      <span className="text-xs text-gray-600 truncate">
-                        {ch.chapter_number}. {ch.title}
-                      </span>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-4">
-                        👁️ {(chapterViewsMap[ch.id] ?? 0).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-    </div>
-  );
-}
+        </div>
+
+        {/* Tasa de retención por historia */}
+        <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-6">
+          <div>
+            <h2 className="text-sm font-semibold">Tasa de retención por capítulo</h2>
+            <p className="text-xs text-gray-500">% de lectores que continúan leyendo respecto al capítulo 1</p>
+          </div>
+          {stories.map((story) => {
+            const storyChapters = (allChapters ?? []).filter((c) => c.story_id === story.id);
+            if (!storyChapters.length) return null;
+            const ch1Views = chapterViewsMap[storyChapters[0]?.id] ?? 1;
+            return (
+              <div key={story.id} className="space-y-3"></div>
