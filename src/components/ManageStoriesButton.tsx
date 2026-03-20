@@ -43,6 +43,9 @@ export default function ManageStoriesButton({ profileUsername }: Props) {
           <Link href="/stats" className="flex items-center gap-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
             📊 Estadísticas
           </Link>
+          <Link href="/biblioteca" className="flex items-center gap-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
+            🔖 Mi biblioteca offline
+          </Link>
         </div>
       </div>
 
