@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import OfflineButton from "@/components/OfflineButton";
 
 interface StoryPageProps {
   params: { id: string };
@@ -129,7 +130,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
           </div>
         </div>
 
-        <div className="flex gap-3 text-xs">
+        <div className="flex flex-wrap gap-3 text-xs">
           <form action={"/story/" + story.id + "/like"} method="post">
             <button
               type="submit"
@@ -154,6 +155,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
               {follow ? "Following" : "Follow author"}
             </button>
           </form>
+          <OfflineButton storyId={story.id} storyTitle={story.title} />
         </div>
 
         <div className="mt-4 rounded-xl border border-border bg-white/70 p-4">

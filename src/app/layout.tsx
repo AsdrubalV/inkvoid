@@ -7,6 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthProvider } from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
 import SearchBar from "@/components/SearchBar";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "InkVoid",
@@ -20,7 +21,6 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const supabase = createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
-
   let username: string | null = null;
   if (user) {
     const { data: profile } = await supabase
@@ -33,8 +33,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#000000" />
+      </head>
       <body className="min-h-screen bg-background text-foreground">
         <AuthProvider>
+          <ServiceWorkerRegister />
           <div className="border-b border-border bg-white/70 backdrop-blur">
             <header className="container flex h-16 items-center justify-between gap-4">
               <div className="flex items-center gap-6">
@@ -55,12 +60,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   </nav>
                 )}
               </div>
-
-              {/* Barra de búsqueda — centro */}
               <div className="flex-1 flex justify-center">
                 <SearchBar />
               </div>
-
               <div className="flex items-center gap-4 text-sm">
                 {user ? (
                   <>
