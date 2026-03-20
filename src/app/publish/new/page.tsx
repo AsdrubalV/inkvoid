@@ -12,6 +12,8 @@ const CATEGORIES = [
   "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy", "Erotic"
 ];
 
+const LANGUAGES = ["Español", "English", "Português", "Français", "Deutsch", "日本語", "中文"];
+
 export default function NewStoryPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -20,6 +22,9 @@ export default function NewStoryPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
+  const [language, setLanguage] = useState("Español");
+  const [status, setStatus] = useState("ongoing");
+  const [isAdult, setIsAdult] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +40,6 @@ export default function NewStoryPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
@@ -61,13 +65,14 @@ export default function NewStoryPage() {
           cover_url: coverUrl,
           tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
           author_id: user.id,
+          language,
+          status,
+          is_adult: isAdult,
         })
         .select("id")
         .single();
 
       if (storyError) throw storyError;
-
-      // Ir directo a agregar el primer capítulo
       router.push("/publish/chapter?story=" + story.id + "&first=true");
     } catch (err: any) {
       setError(err.message ?? "Error al publicar");
@@ -84,7 +89,6 @@ export default function NewStoryPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border bg-white/70 p-6">
-
         <div className="grid gap-6 sm:grid-cols-[1fr,160px]">
           <div className="space-y-4">
 
@@ -108,19 +112,63 @@ export default function NewStoryPage() {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">Categoría *</label>
-              <select
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-              >
-                <option value="">Selecciona una categoría</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700">Categoría *</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700">Idioma *</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700">Estado</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="ongoing">En progreso</option>
+                  <option value="completed">Completa</option>
+                  <option value="hiatus">En hiatus</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700">Contenido adulto</label>
+                <div className="flex items-center gap-2 h-10">
+                  <button
+                    type="button"
+                    onClick={() => setIsAdult(!isAdult)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAdult ? "bg-red-500" : "bg-gray-200"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isAdult ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                  <span className="text-xs text-gray-600">{isAdult ? "Contenido adulto" : "Apto para todos"}</span>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -135,7 +183,6 @@ export default function NewStoryPage() {
 
           </div>
 
-          {/* Cover */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-700">Portada</label>
             <label className="cursor-pointer block">
@@ -164,7 +211,6 @@ export default function NewStoryPage() {
         >
           {loading ? "Guardando..." : "Continuar → Agregar primer capítulo"}
         </button>
-
       </form>
     </div>
   );
