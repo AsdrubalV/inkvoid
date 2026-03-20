@@ -4,7 +4,5 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   const supabase = createServerSupabase();
   await supabase.auth.signOut();
-
-  const url = new URL("/", request.url);
-  return NextResponse.redirect(new URL("/", "https://inkvoid.onrender.com"));
+  return NextResponse.redirect(new URL("/", request.url));
 }
