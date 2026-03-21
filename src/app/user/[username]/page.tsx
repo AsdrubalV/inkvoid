@@ -45,6 +45,33 @@ export default async function UserProfile({ params }: Props) {
     isOwner = myProfile?.username === username;
   }
 
+  // Estadísticas del autor
+  const { count: followersCount } = await supabase
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("followed_id", profile.id);
+
+  const storyIds = (stories ?? []).map((s) => s.id);
+
+  const { count: totalLikes } = storyIds.length
+    ? await supabase
+        .from("story_likes")
+        .select("*", { count: "exact", head: true })
+        .in("story_id", storyIds)
+    : { count: 0 };
+
+  // Estado de follow del usuario actual
+  const { data: followData } = user && !isOwner
+    ? await supabase
+        .from("follows")
+        .select("id")
+        .eq("follower_id", user.id)
+        .eq("followed_id", profile.id)
+        .maybeSingle()
+    : { data: null };
+
+  const isFollowing = !!followData;
+
   return (
     <div className="space-y-8">
       {/* Banner */}
@@ -62,8 +89,9 @@ export default async function UserProfile({ params }: Props) {
 
         {/* Columna izquierda */}
         <div className="space-y-8">
+
           {/* Avatar + info */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-start gap-6">
             <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
@@ -71,11 +99,44 @@ export default async function UserProfile({ params }: Props) {
                 <span className="text-3xl text-gray-400">👤</span>
               )}
             </div>
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold">@{profile.username}</h1>
-              <p className="text-gray-600 text-sm">
-                {profile.bio || "This author has not written a bio yet."}
-              </p>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-semibold">@{profile.username}</h1>
+                  <p className="text-gray-600 text-sm mt-0.5">
+                    {profile.bio || "This author has not written a bio yet."}
+                  </p>
+                </div>
+                {/* Botón follow — solo visible si no es el dueño */}
+                {user && !isOwner && (
+                  <form action={"/profile/" + username + "/follow"} method="post">
+                    <button
+                      type="submit"
+                      className={"rounded-full border px-4 py-1.5 text-xs font-medium transition " + (isFollowing ? "bg-gray-900 text-white border-gray-900 hover:bg-gray-700" : "border-border text-gray-700 hover:bg-gray-100")}
+                    >
+                      {isFollowing ? "Siguiendo" : "Seguir"}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Estadísticas */}
+              <div className="flex gap-5 pt-1 text-sm">
+                <div className="text-center">
+                  <p className="font-semibold">{(stories?.length ?? 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">Historias</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">{(followersCount ?? 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">Seguidores</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">{(totalLikes ?? 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">Likes</p>
+                </div>
+              </div>
+
+              {/* Links externos */}
               <div className="flex flex-wrap gap-3 pt-1 text-xs text-gray-500">
                 {profile.patreon_url && (
                   <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>
