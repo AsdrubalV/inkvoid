@@ -71,14 +71,8 @@ export default function ManagePage() {
   async function deleteChapter(chapterId: string, storyId: string) {
     if (!confirm("¿Seguro que quieres borrar este capítulo? Esta acción no se puede deshacer.")) return;
     setDeleting(chapterId);
-
     const { error } = await supabase.from("chapters").delete().eq("id", chapterId);
-    if (error) {
-      alert("Error al borrar el capítulo: " + error.message);
-      setDeleting(null);
-      return;
-    }
-
+    if (error) { alert("Error al borrar el capítulo: " + error.message); setDeleting(null); return; }
     setStories((prev) =>
       prev.map((s) =>
         s.id === storyId
@@ -92,21 +86,10 @@ export default function ManagePage() {
   async function deleteStory(storyId: string) {
     if (!confirm("¿Seguro que quieres borrar esta historia y TODOS sus capítulos? Esta acción no se puede deshacer.")) return;
     setDeleting(storyId);
-
     const { error: chaptersError } = await supabase.from("chapters").delete().eq("story_id", storyId);
-    if (chaptersError) {
-      alert("Error al borrar los capítulos: " + chaptersError.message);
-      setDeleting(null);
-      return;
-    }
-
+    if (chaptersError) { alert("Error al borrar los capítulos: " + chaptersError.message); setDeleting(null); return; }
     const { error: storyError } = await supabase.from("stories").delete().eq("id", storyId);
-    if (storyError) {
-      alert("Error al borrar la historia: " + storyError.message);
-      setDeleting(null);
-      return;
-    }
-
+    if (storyError) { alert("Error al borrar la historia: " + storyError.message); setDeleting(null); return; }
     setStories((prev) => prev.filter((s) => s.id !== storyId));
     setDeleting(null);
   }
@@ -126,10 +109,7 @@ export default function ManagePage() {
           <h1 className="text-2xl font-semibold tracking-tight">Mis historias</h1>
           <p className="text-sm text-gray-500 mt-0.5">Administra tus historias y capítulos</p>
         </div>
-        <Link
-          href="/publish/new"
-          className="rounded-full bg-black px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 transition"
-        >
+        <Link href="/publish/new" className="rounded-full bg-black px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 transition">
           + Nueva historia
         </Link>
       </div>
@@ -168,7 +148,7 @@ export default function ManagePage() {
                     href={"/publish/chapter?story=" + story.id + "&edit=true"}
                     className="rounded-full border border-border px-3 py-1 text-xs hover:bg-gray-50 transition"
                   >
-                    ✏️ Editar
+                    ✏️ Historia
                   </Link>
                   <button
                     onClick={() => deleteStory(story.id)}
@@ -191,16 +171,24 @@ export default function ManagePage() {
                   {story.chapters?.length ? (
                     story.chapters.map((ch) => (
                       <div key={ch.id} className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 truncate flex-1 mr-4">
                           {ch.chapter_number}. {ch.title}
                         </span>
-                        <button
-                          onClick={() => deleteChapter(ch.id, story.id)}
-                          disabled={deleting === ch.id}
-                          className="rounded-full border border-red-200 px-3 py-0.5 text-xs text-red-600 hover:bg-red-50 transition disabled:opacity-50"
-                        >
-                          {deleting === ch.id ? "..." : "🗑️ Borrar"}
-                        </button>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Link
+                            href={"/publish/chapter/edit/" + ch.id}
+                            className="rounded-full border border-border px-3 py-0.5 text-xs hover:bg-gray-50 transition"
+                          >
+                            ✏️ Editar
+                          </Link>
+                          <button
+                            onClick={() => deleteChapter(ch.id, story.id)}
+                            disabled={deleting === ch.id}
+                            className="rounded-full border border-red-200 px-3 py-0.5 text-xs text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                          >
+                            {deleting === ch.id ? "..." : "🗑️ Borrar"}
+                          </button>
+                        </div>
                       </div>
                     ))
                   ) : (
