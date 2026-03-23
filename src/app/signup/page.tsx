@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,8 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        data: { username }
+        data: { username },
+        emailRedirectTo: "https://inkvoid.ink/auth/callback",
       }
     });
 
@@ -38,24 +40,43 @@ export default function SignupPage() {
       return;
     }
 
-    // Esperar a que el perfil se cree en la tabla profiles
-    // (lo crea un trigger de Supabase, puede tardar un momento)
-    let profile = null;
-    let attempts = 0;
-    while (!profile && attempts < 10) {
-      await new Promise((res) => setTimeout(res, 800));
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-      profile = p;
-      attempts++;
+    // Si Supabase requiere confirmación de email, mostrar mensaje
+    // Si no requiere confirmación, redirigir directamente
+    if (data.session) {
+      // No requiere confirmación — sesión activa inmediatamente
+      router.push("/user/" + username);
+      router.refresh();
+    } else {
+      // Requiere confirmación de email
+      setConfirmationSent(true);
+      setLoading(false);
     }
-
-    router.push(`/user/${username}`);
-    router.refresh();
   };
+
+  // Pantalla de confirmación pendiente
+  if (confirmationSent) {
+    return (
+      <div className="flex justify-center mt-20">
+        <div className="w-[400px] space-y-4 text-center">
+          <div className="text-4xl">📬</div>
+          <h1 className="text-2xl font-semibold">Revisa tu correo</h1>
+          <p className="text-gray-600 text-sm">
+            Te enviamos un enlace de confirmación a <strong>{email}</strong>.
+            Haz click en el enlace para activar tu cuenta.
+          </p>
+          <p className="text-xs text-gray-400">
+            Si no ves el correo, revisa tu carpeta de spam.
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="text-sm text-black underline hover:no-underline"
+          >
+            Ir al login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center mt-20">
