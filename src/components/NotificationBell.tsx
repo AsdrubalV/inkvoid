@@ -23,8 +23,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
   useEffect(() => {
     loadNotifications();
-
-    // Suscripción realtime — llega notificación nueva sin recargar
     const channel = supabase
       .channel("notifications-" + userId)
       .on("postgres_changes", {
@@ -36,11 +34,9 @@ export default function NotificationBell({ userId }: { userId: string }) {
         setNotifications((prev) => [payload.new as Notification, ...prev]);
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  // Cerrar al click fuera
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -77,7 +73,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
   return (
     <div ref={ref} className="relative">
-      {/* Campana */}
       <button
         onClick={() => { setOpen(!open); if (!open && unread > 0) markAllRead(); }}
         className="relative flex items-center justify-center h-8 w-8 rounded-full hover:bg-gray-100 transition"
@@ -91,7 +86,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-10 z-50 w-80 rounded-2xl border border-border bg-white shadow-xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -102,7 +96,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
               </button>
             )}
           </div>
-
           <div className="max-h-96 overflow-y-auto divide-y divide-border">
             {notifications.length === 0 ? (
               <div className="py-10 text-center space-y-2">
@@ -111,15 +104,10 @@ export default function NotificationBell({ userId }: { userId: string }) {
               </div>
             ) : (
               notifications.map((n) => (
-                <NotificationItem
-                  key={n.id}
-                  notification={n}
-                  onRead={() => markRead(n.id)}
-                />
+                <NotificationItem key={n.id} notification={n} onRead={() => markRead(n.id)} />
               ))
             )}
           </div>
-
           {notifications.length > 0 && (
             <div className="px-4 py-2 border-t border-border">
               <Link
@@ -139,7 +127,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
 function NotificationItem({ notification, onRead }: { notification: Notification; onRead: () => void }) {
   const timeAgo = getTimeAgo(notification.created_at);
-
   const content = (
     <div
       className={"flex gap-3 px-4 py-3 hover:bg-gray-50 transition cursor-pointer " + (!notification.read ? "bg-blue-50/50" : "")}
@@ -164,7 +151,6 @@ function NotificationItem({ notification, onRead }: { notification: Notification
       )}
     </div>
   );
-
   if (notification.url) {
     return <Link href={notification.url}>{content}</Link>;
   }
@@ -172,4 +158,13 @@ function NotificationItem({ notification, onRead }: { notification: Notification
 }
 
 function getTimeAgo(dateStr: string): string {
-  const diff = Date.now() -
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return "ahora mismo";
+  if (mins < 60) return "hace " + mins + " min";
+  if (hours < 24) return "hace " + hours + "h";
+  if (days < 7) return "hace " + days + "d";
+  return new Date(dateStr).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+}
