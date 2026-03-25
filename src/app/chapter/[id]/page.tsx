@@ -3,6 +3,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import CommentsSection from "./comments";
+import ReaderSettings from "@/components/ReaderSettings";
 
 interface ChapterPageProps {
   params: { id: string };
@@ -11,7 +12,7 @@ interface ChapterPageProps {
 async function getCountryFromIP(ip: string): Promise<string | null> {
   try {
     if (!ip || ip === "127.0.0.1" || ip === "::1") return null;
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=country`, { next: { revalidate: 86400 } });
+    const res = await fetch("http://ip-api.com/json/" + ip + "?fields=country", { next: { revalidate: 86400 } });
     const data = await res.json();
     return data.country ?? null;
   } catch {
@@ -36,6 +37,16 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     .eq("id", chapter.story_id)
     .maybeSingle();
 
+  const { data: allChapters } = await supabase
+    .from("chapters")
+    .select("id, chapter_number")
+    .eq("story_id", chapter.story_id)
+    .order("chapter_number", { ascending: true });
+
+  const currentIndex = allChapters?.findIndex((c) => c.id === chapter.id) ?? -1;
+  const prevChapter = currentIndex > 0 ? allChapters?.[currentIndex - 1] : null;
+  const nextChapter = allChapters && currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
+
   const { data: { user } } = await supabase.auth.getUser();
 
   let hasSubscription = false;
@@ -51,40 +62,25 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const isLocked = chapter.is_premium && !hasSubscription;
 
-  // Capturar IP y país
   const headersList = headers();
-  const ip =
-    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headersList.get("x-real-ip") ??
-    "unknown";
-
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? headersList.get("x-real-ip") ?? "unknown";
   const country = await getCountryFromIP(ip);
 
-  // Registrar vista de historia
   try {
-    await supabase.from("story_views").insert({
-      story_id: chapter.story_id,
-      user_id: user?.id ?? null,
-      country,
-    });
+    await supabase.from("story_views").insert({ story_id: chapter.story_id, user_id: user?.id ?? null, country });
   } catch (_) {}
 
-  // Registrar vista de capítulo
   try {
-    await supabase.from("chapter_views").insert({
-      chapter_id: chapter.id,
-      story_id: chapter.story_id,
-      user_id: user?.id ?? null,
-      country,
-    });
+    await supabase.from("chapter_views").insert({ chapter_id: chapter.id, story_id: chapter.story_id, user_id: user?.id ?? null, country });
   } catch (_) {}
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+
       <header className="space-y-2 border-b border-border pb-4">
-        <div className="text-xs uppercase tracking-wide text-gray-500">
-          {story?.title}
-        </div>
+        <Link href={"/story/" + chapter.story_id} className="text-xs uppercase tracking-wide text-gray-500 hover:text-black transition">
+          ← {story?.title}
+        </Link>
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight">
             {chapter.chapter_number}. {chapter.title}
@@ -102,7 +98,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           <div className="text-4xl">👑</div>
           <h2 className="text-lg font-semibold">Capítulo exclusivo para suscriptores</h2>
           <p className="text-sm text-gray-600 max-w-sm mx-auto">
-            Este capítulo es exclusivo para miembros de InkVoid. Suscríbete para acceder a todo el contenido premium de la plataforma.
+            Este capítulo es exclusivo para miembros de InkVoid. Suscríbete para acceder a todo el contenido premium.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             {user ? (
@@ -126,10 +122,29 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </div>
       ) : (
         <>
-          <article
-            className="prose prose-sm max-w-none rounded-xl border border-border bg-white/70 px-5 py-4"
-            dangerouslySetInnerHTML={{ __html: chapter.content_html }}
+          {/* ── Único cambio: agregar chapterId y currentUserId ── */}
+          <ReaderSettings
+            content={chapter.content_html}
+            chapterId={chapter.id}
+            currentUserId={user?.id ?? null}
           />
+
+          <div className="flex items-center justify-between pt-2">
+            {prevChapter ? (
+              <Link href={"/chapter/" + prevChapter.id} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-gray-50 transition">
+                ← Capítulo {prevChapter.chapter_number}
+              </Link>
+            ) : <div />}
+            <Link href={"/story/" + chapter.story_id} className="text-xs text-gray-400 hover:text-black transition">
+              Índice
+            </Link>
+            {nextChapter ? (
+              <Link href={"/chapter/" + nextChapter.id} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-gray-50 transition">
+                Capítulo {nextChapter.chapter_number} →
+              </Link>
+            ) : <div />}
+          </div>
+
           <CommentsSection chapterId={chapter.id} currentUserId={user?.id ?? null} />
         </>
       )}
