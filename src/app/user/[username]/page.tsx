@@ -5,6 +5,7 @@ import EditProfileButton from "@/components/EditProfileButton";
 import ManageStoriesButton from "@/components/ManageStoriesButton";
 import ProfileMessages from "@/components/ProfileMessages";
 import ProfileTabs from "@/components/ProfileTabs";
+import AuthorBadges from "@/components/AuthorBadges";
 import Link from "next/link";
 
 interface Props {
@@ -159,7 +160,9 @@ export default async function UserProfile({ params, searchParams }: Props) {
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-3xl text-gray-400">👤</span>
+                <div className="h-full w-full flex items-center justify-center text-gray-300 text-xs font-medium">
+                  {profile.username.slice(0, 2).toUpperCase()}
+                </div>
               )}
             </div>
             <div className="flex-1 space-y-2">
@@ -167,11 +170,11 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 <div>
                   <h1 className="text-2xl font-semibold">@{profile.username}</h1>
                   <p className="text-gray-600 text-sm mt-0.5">
-                    {profile.bio || "This author has not written a bio yet."}
+                    {profile.bio || "Este autor aún no ha escrito una biografía."}
                   </p>
                 </div>
 
-                {/* ── Botones Follow + Mensaje ── */}
+                {/* Botones Follow + Mensaje */}
                 {user && !isOwner && (
                   <div className="flex gap-2">
                     <form action={"/profile/" + username + "/follow"} method="post">
@@ -186,7 +189,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
                       href={"/mensajes/" + username}
                       className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition"
                     >
-                      💬 Mensaje
+                      Mensaje
                     </Link>
                   </div>
                 )}
@@ -208,17 +211,20 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 </div>
               </div>
 
-              {/* Links */}
+              {/* Links externos */}
               <div className="flex flex-wrap gap-3 pt-1 text-xs text-gray-500">
                 {profile.patreon_url && <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>}
                 {profile.amazon_url && <a href={profile.amazon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Amazon</a>}
                 {profile.tiktok_url && <a href={profile.tiktok_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">TikTok</a>}
                 {profile.website_url && <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>}
               </div>
+
+              {/* Insignias y rankings */}
+              <AuthorBadges authorId={profile.id} />
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs — solo visibles para el dueño */}
           {isOwner && (
             <ProfileTabs
               username={username}
@@ -235,7 +241,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
           {/* Contenido según tab */}
           {activeTab === "stories" || !isOwner ? (
             <div className="space-y-4">
-              {!isOwner && <h2 className="text-lg font-semibold">Stories</h2>}
+              {!isOwner && <h2 className="text-lg font-semibold">Historias</h2>}
               {stories?.length ? (
                 stories.map((s: any) => (
                   <StoryCard
@@ -270,7 +276,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
-                  <p className="text-3xl">📖</p>
                   <p className="text-sm text-gray-500">No has leído ninguna historia aún.</p>
                   <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
                     Explorar historias
@@ -295,7 +300,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
-                  <p className="text-3xl">🔖</p>
                   <p className="text-sm text-gray-500">No tienes historias guardadas.</p>
                   <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
                     Explorar historias
@@ -316,7 +320,9 @@ export default async function UserProfile({ params, searchParams }: Props) {
                       {author.avatar_url ? (
                         <img src={author.avatar_url} alt={author.username} className="h-full w-full object-cover" />
                       ) : (
-                        <span className="text-xl text-gray-400">👤</span>
+                        <span className="text-xs font-medium text-gray-400">
+                          {author.username.slice(0, 2).toUpperCase()}
+                        </span>
                       )}
                     </div>
                     <div>
@@ -329,7 +335,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
-                  <p className="text-3xl">👥</p>
                   <p className="text-sm text-gray-500">No sigues a ningún autor aún.</p>
                   <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
                     Descubrir autores
