@@ -43,14 +43,12 @@ export default async function UserProfile({ params, searchParams }: Props) {
     isOwner = myProfile?.username === username;
   }
 
-  // ── Historias publicadas ──────────────────────────────────────────────
   const { data: stories } = await supabase
     .from("stories")
     .select("id, title, description, cover_url, category, tags")
     .eq("author_id", profile.id)
     .order("created_at", { ascending: false });
 
-  // ── Estadísticas ──────────────────────────────────────────────────────
   const { count: followersCount } = await supabase
     .from("follows")
     .select("*", { count: "exact", head: true })
@@ -64,7 +62,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
         .in("story_id", storyIds)
     : { count: 0 };
 
-  // ── Follow status ─────────────────────────────────────────────────────
   const { data: followData } = user && !isOwner
     ? await supabase
         .from("follows")
@@ -76,13 +73,11 @@ export default async function UserProfile({ params, searchParams }: Props) {
 
   const isFollowing = !!followData;
 
-  // ── Datos de tabs (solo si es el dueño) ───────────────────────────────
   let historial: any[] = [];
   let bookmarks: any[] = [];
   let siguiendo: any[] = [];
 
   if (isOwner) {
-    // Historial — últimas 20 historias únicas vistas
     const { data: views } = await supabase
       .from("story_views")
       .select("story_id, viewed_at")
@@ -90,7 +85,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
       .order("viewed_at", { ascending: false })
       .limit(60);
 
-    // Deduplicar por story_id
     const seenIds = new Set<string>();
     const uniqueViews = (views ?? []).filter((v) => {
       if (seenIds.has(v.story_id)) return false;
@@ -108,7 +102,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
         .filter(Boolean);
     }
 
-    // Bookmarks
     const { data: bookmarkData } = await supabase
       .from("story_bookmarks")
       .select("story_id, created_at")
@@ -126,7 +119,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
         .filter(Boolean);
     }
 
-    // Siguiendo
     const { data: followingData } = await supabase
       .from("follows")
       .select("author_id")
@@ -178,15 +170,25 @@ export default async function UserProfile({ params, searchParams }: Props) {
                     {profile.bio || "This author has not written a bio yet."}
                   </p>
                 </div>
+
+                {/* ── Botones Follow + Mensaje ── */}
                 {user && !isOwner && (
-                  <form action={"/profile/" + username + "/follow"} method="post">
-                    <button
-                      type="submit"
-                      className={"rounded-full border px-4 py-1.5 text-xs font-medium transition " + (isFollowing ? "bg-gray-900 text-white border-gray-900 hover:bg-gray-700" : "border-border text-gray-700 hover:bg-gray-100")}
+                  <div className="flex gap-2">
+                    <form action={"/profile/" + username + "/follow"} method="post">
+                      <button
+                        type="submit"
+                        className={"rounded-full border px-4 py-1.5 text-xs font-medium transition " + (isFollowing ? "bg-gray-900 text-white border-gray-900 hover:bg-gray-700" : "border-border text-gray-700 hover:bg-gray-100")}
+                      >
+                        {isFollowing ? "Siguiendo" : "Seguir"}
+                      </button>
+                    </form>
+                    <Link
+                      href={"/mensajes/" + username}
+                      className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition"
                     >
-                      {isFollowing ? "Siguiendo" : "Seguir"}
-                    </button>
-                  </form>
+                      💬 Mensaje
+                    </Link>
+                  </div>
                 )}
               </div>
 
@@ -216,7 +218,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* Tabs — solo visibles para el dueño */}
+          {/* Tabs */}
           {isOwner && (
             <ProfileTabs
               username={username}
