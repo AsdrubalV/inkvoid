@@ -8,6 +8,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
 import SearchBar from "@/components/SearchBar";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import NotificationBell from "@/components/NotificationBell";
 
 export const metadata: Metadata = {
   title: "InkVoid",
@@ -66,9 +67,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <div className="flex items-center gap-4 text-sm">
                 {user ? (
                   <>
+                    {/* Campana de notificaciones */}
+                    <NotificationBell userId={user.id} />
                     {username && (
                       <Link
-                        href={`/user/${username}`}
+                        href={"/user/" + username}
                         className="rounded-full border border-border px-3 py-1 hover:bg-gray-50"
                       >
                         {username}
