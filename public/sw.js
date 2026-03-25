@@ -1,10 +1,13 @@
-const CACHE_NAME = "inkvoid-v1";
-const OFFLINE_CHAPTERS_STORE = "offline-chapters";
+const CACHE_NAME = "inkvoid-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(["/", "/offline.html"])
+      cache.addAll([
+        "/",
+        "/offline.html",
+        "/biblioteca",
+      ])
     )
   );
   self.skipWaiting();
@@ -22,7 +25,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Para páginas de capítulos, intentar red primero, luego caché
+  // Capítulos — red primero, luego caché
   if (url.pathname.startsWith("/chapter/")) {
     event.respondWith(
       fetch(event.request)
@@ -31,13 +34,32 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return res;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached ?? caches.match("/offline.html")))
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached ?? caches.match("/offline.html"))
+        )
     );
     return;
   }
 
-  // Para assets estáticos, caché primero
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff2?)$/)) {
+  // Biblioteca — caché primero (funciona offline)
+  if (url.pathname.startsWith("/biblioteca")) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((res) => {
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, res.clone()));
+          return res;
+        }).catch(() => caches.match("/offline.html"));
+      })
+    );
+    return;
+  }
+
+  // Assets estáticos — caché primero
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff2?)$/)
+  ) {
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
@@ -50,13 +72,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Para el resto, red primero
+  // Resto — red primero
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request).then((cached) => cached ?? caches.match("/offline.html")))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((cached) => cached ?? caches.match("/offline.html"))
+    )
   );
 });
 
-// Background Sync para lecturas offline
+// Background Sync
 self.addEventListener("sync", (event) => {
   if (event.tag === "sync-reads") {
     event.waitUntil(syncPendingReads());
@@ -68,7 +92,6 @@ async function syncPendingReads() {
   const tx = db.transaction("pending-reads", "readwrite");
   const store = tx.objectStore("pending-reads");
   const reads = await getAllFromStore(store);
-
   for (const read of reads) {
     try {
       await fetch("/api/sync-read", {
@@ -86,9 +109,12 @@ function openDB() {
     const req = indexedDB.open("inkvoid-offline", 1);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains("chapters")) db.createObjectStore("chapters", { keyPath: "id" });
-      if (!db.objectStoreNames.contains("pending-reads")) db.createObjectStore("pending-reads", { keyPath: "id", autoIncrement: true });
-      if (!db.objectStoreNames.contains("subscriptions")) db.createObjectStore("subscriptions", { keyPath: "user_id" });
+      if (!db.objectStoreNames.contains("chapters"))
+        db.createObjectStore("chapters", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("pending-reads"))
+        db.createObjectStore("pending-reads", { keyPath: "id", autoIncrement: true });
+      if (!db.objectStoreNames.contains("subscriptions"))
+        db.createObjectStore("subscriptions", { keyPath: "user_id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
