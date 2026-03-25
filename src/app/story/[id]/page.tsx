@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import OfflineButton from "@/components/OfflineButton";
+import ContinueReading from "@/components/ContinueReading";
 
 interface StoryPageProps {
   params: { id: string };
@@ -12,15 +13,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: story, error } = await supabase
     .from("stories")
-    .select(`
-      id,
-      title,
-      description,
-      cover_url,
-      category,
-      tags,
-      author_id
-    `)
+    .select("id, title, description, cover_url, category, tags, author_id")
     .eq("id", params.id)
     .single();
 
@@ -84,17 +77,36 @@ export default async function StoryPage({ params }: StoryPageProps) {
         .maybeSingle()
     : { data: null };
 
+  // ── Progreso de lectura ───────────────────────────────────────────────
+  const { data: progress } = user
+    ? await supabase
+        .from("reading_progress")
+        .select("chapter_id, chapter_number, updated_at, chapters(title)")
+        .eq("user_id", user.id)
+        .eq("story_id", params.id)
+        .maybeSingle()
+    : { data: null };
+
   return (
     <div className="grid gap-8 lg:grid-cols-[2.2fr,1.1fr]">
       <section className="space-y-4">
+
+        {/* Banner continúa leyendo */}
+        {progress && (
+          <ContinueReading
+            storyId={story.id}
+            storyTitle={story.title}
+            chapterId={progress.chapter_id}
+            chapterNumber={progress.chapter_number}
+            chapterTitle={(progress.chapters as any)?.title ?? ""}
+            updatedAt={progress.updated_at}
+          />
+        )}
+
         <div className="flex gap-5">
           {story.cover_url && (
             <div className="h-44 w-32 flex-shrink-0 overflow-hidden rounded-md border border-border bg-gray-100">
-              <img
-                src={story.cover_url}
-                alt={story.title}
-                className="h-full w-full object-cover"
-              />
+              <img src={story.cover_url} alt={story.title} className="h-full w-full object-cover" />
             </div>
           )}
           <div className="space-y-2">
@@ -166,9 +178,14 @@ export default async function StoryPage({ params }: StoryPageProps) {
                 <Link
                   key={ch.id}
                   href={"/chapter/" + ch.id}
-                  className="flex items-center justify-between py-2 text-sm hover:bg-gray-50"
+                  className={"flex items-center justify-between py-2 text-sm hover:bg-gray-50 " + (progress?.chapter_number === ch.chapter_number ? "font-semibold text-green-700" : "")}
                 >
                   <span>{ch.chapter_number}. {ch.title}</span>
+                  {progress?.chapter_number === ch.chapter_number && (
+                    <span className="text-[10px] text-green-600 bg-green-50 rounded-full px-2 py-0.5">
+                      Aquí dejaste
+                    </span>
+                  )}
                 </Link>
               ))
             ) : (

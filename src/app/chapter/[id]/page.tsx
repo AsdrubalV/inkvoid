@@ -74,6 +74,19 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     await supabase.from("chapter_views").insert({ chapter_id: chapter.id, story_id: chapter.story_id, user_id: user?.id ?? null, country });
   } catch (_) {}
 
+  // ── Guardar progreso de lectura ──────────────────────────────────────
+  if (user && !isLocked) {
+    try {
+      await supabase.from("reading_progress").upsert({
+        user_id: user.id,
+        story_id: chapter.story_id,
+        chapter_id: chapter.id,
+        chapter_number: chapter.chapter_number,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,story_id" });
+    } catch (_) {}
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
 
@@ -122,7 +135,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </div>
       ) : (
         <>
-          {/* ── Único cambio: agregar chapterId y currentUserId ── */}
           <ReaderSettings
             content={chapter.content_html}
             chapterId={chapter.id}
