@@ -4,14 +4,18 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function sanitizeUsername(value: string): string {
-  return value.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚüÜñÑ]/g, "");
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_\-]/g, "");
 }
 
 function validateUsername(value: string): string | null {
   if (value.length < 3) return "El username debe tener al menos 3 caracteres.";
   if (value.length > 30) return "El username no puede superar 30 caracteres.";
   if (/\s/.test(value)) return "El username no puede contener espacios.";
-  if (!/^[a-zA-Z0-9_\-áéíóúÁÉÍÓÚüÜñÑ]+$/.test(value))
+  if (!/^[a-zA-Z0-9_\-]+$/.test(value))
     return "Solo se permiten letras, números, guiones y guiones bajos.";
   return null;
 }
@@ -47,7 +51,6 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    // Verificar que el username no esté tomado
     const { data: existing } = await supabase
       .from("profiles")
       .select("id")
