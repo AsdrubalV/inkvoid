@@ -13,17 +13,44 @@ const ALL_CATEGORIES = [
 ];
 
 interface Props {
-  searchParams: { sort?: string; period?: string; category?: string; page?: string };
+  searchParams: {
+    sort?: string; period?: string; category?: string; page?: string;
+    tags?: string; excludeTags?: string; status?: string;
+    language?: string; adult?: string; words?: string;
+  };
 }
 
 export default async function TrendingPage({ searchParams }: Props) {
   const supabase = createServerSupabase();
-  const sort     = searchParams.sort     ?? "views";
-  const period   = searchParams.period   ?? "all";
-  const category = searchParams.category ?? "";
-  const page     = parseInt(searchParams.page ?? "1");
+
+  const sort         = searchParams.sort         ?? "views";
+  const period       = searchParams.period       ?? "all";
+  const category     = searchParams.category     ?? "";
+  const page         = parseInt(searchParams.page ?? "1");
+  const tagsParam    = searchParams.tags         ?? "";
+  const excludeParam = searchParams.excludeTags  ?? "";
+  const status       = searchParams.status       ?? "";
+  const language     = searchParams.language     ?? "";
+  const adult        = searchParams.adult        ?? "";
+  const words        = searchParams.words        ?? "";
+
   const pageSize = 36;
   const offset   = (page - 1) * pageSize;
+
+  const includeTags  = tagsParam    ? tagsParam.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean)    : [];
+  const excludeTags  = excludeParam ? excludeParam.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean) : [];
+  const [wordsMin, wordsMax] = words ? words.split("-").map(Number) : [null, null];
+
+  function applyCommonFilters(q: any) {
+    if (category)          q = q.eq("category", category);
+    if (status)            q = q.eq("status", status);
+    if (language)          q = q.eq("language", language);
+    if (adult === "true")  q = q.eq("is_adult", true);
+    if (adult === "false") q = q.eq("is_adult", false);
+    if (wordsMin !== null) q = q.gte("total_words", wordsMin);
+    if (wordsMax !== null) q = q.lte("total_words", wordsMax);
+    return q;
+  }
 
   let stories: any[] = [];
 
@@ -41,9 +68,9 @@ export default async function TrendingPage({ searchParams }: Props) {
       if (ids.length) {
         let q = supabase
           .from("stories")
-          .select("id, title, cover_url, category, views, likes, profiles!stories_author_id_fkey(username)")
+          .select("id, title, cover_url, category, views, likes, tags, status, language, is_adult, total_words, profiles!stories_author_id_fkey(username)")
           .in("id", ids);
-        if (category) q = q.eq("category", category);
+        q = applyCommonFilters(q);
         const { data } = await q;
         stories = ids
           .map((id: string) => data?.find((s: any) => s.id === id))
@@ -53,9 +80,9 @@ export default async function TrendingPage({ searchParams }: Props) {
   } else {
     let q = supabase
       .from("stories")
-      .select("id, title, cover_url, category, views, likes, profiles!stories_author_id_fkey(username)");
+      .select("id, title, cover_url, category, views, likes, tags, status, language, is_adult, total_words, profiles!stories_author_id_fkey(username)");
 
-    if (category) q = q.eq("category", category);
+    q = applyCommonFilters(q);
 
     if (sort === "likes")       q = q.order("likes",           { ascending: false });
     else if (sort === "recent") q = q.order("last_chapter_at", { ascending: false });
@@ -67,6 +94,23 @@ export default async function TrendingPage({ searchParams }: Props) {
     stories = data ?? [];
   }
 
+  // Filtrar tags en memoria (Supabase no soporta array contains con texto)
+  if (includeTags.length > 0) {
+    stories = stories.filter((s) => {
+      const storyTags = (Array.isArray(s.tags) ? s.tags : (s.tags ?? "").split(","))
+        .map((t: string) => t.trim().toLowerCase());
+      return includeTags.every((tag) => storyTags.includes(tag));
+    });
+  }
+
+  if (excludeTags.length > 0) {
+    stories = stories.filter((s) => {
+      const storyTags = (Array.isArray(s.tags) ? s.tags : (s.tags ?? "").split(","))
+        .map((t: string) => t.trim().toLowerCase());
+      return !excludeTags.some((tag) => storyTags.includes(tag));
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,16 +119,19 @@ export default async function TrendingPage({ searchParams }: Props) {
           Ranked by views, likes, comments and recent chapter activity.
         </p>
       </div>
-
       <TrendingFilters
         categories={ALL_CATEGORIES}
         currentSort={sort}
         currentPeriod={period}
         currentCategory={category}
+        currentTags={tagsParam}
+        currentExcludeTags={excludeParam}
+        currentStatus={status}
+        currentLanguage={language}
+        currentAdult={adult}
+        currentWords={words}
       />
-
       <TrendingGrid stories={stories} />
-
       <TrendingPagination
         page={page}
         hasMore={stories.length === pageSize}

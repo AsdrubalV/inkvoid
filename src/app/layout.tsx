@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import SearchBar from "@/components/SearchBar";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import NotificationBell from "@/components/NotificationBell";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "InkVoid",
@@ -37,8 +38,49 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
+
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-BBPW5SHKDW"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-BBPW5SHKDW');
+          `}
+        </Script>
+
+        {/* Meta Pixel */}
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '1545799847111899');
+            fbq('track', 'PageView');
+          `}
+        </Script>
       </head>
       <body className="min-h-screen bg-background text-foreground">
+        {/* Meta Pixel noscript fallback */}
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1545799847111899&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
+
         <AuthProvider>
           <ServiceWorkerRegister />
           <div className="border-b border-border bg-white/70 backdrop-blur">
@@ -67,7 +109,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <div className="flex items-center gap-4 text-sm">
                 {user ? (
                   <>
-                    {/* Campana de notificaciones */}
                     <NotificationBell userId={user.id} />
                     {username && (
                       <Link
