@@ -7,6 +7,7 @@ import ProfileMessages from "@/components/ProfileMessages";
 import ProfileTabs from "@/components/ProfileTabs";
 import AuthorBadges from "@/components/AuthorBadges";
 import Link from "next/link";
+import { Suspense } from "react";
 
 interface Props {
   params: { username: string };
@@ -174,7 +175,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
                   </p>
                 </div>
 
-                {/* Botones Follow + Mensaje */}
                 {user && !isOwner && (
                   <div className="flex gap-2">
                     <form action={"/profile/" + username + "/follow"} method="post">
@@ -219,12 +219,14 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 {profile.website_url && <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>}
               </div>
 
-              {/* Insignias y rankings */}
-              <AuthorBadges authorId={profile.id} />
+              {/* Insignias */}
+              <Suspense fallback={null}>
+                <AuthorBadges authorId={profile.id} />
+              </Suspense>
             </div>
           </div>
 
-          {/* Tabs — solo visibles para el dueño */}
+          {/* Tabs */}
           {isOwner && (
             <ProfileTabs
               username={username}
@@ -277,9 +279,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
                   <p className="text-sm text-gray-500">No has leído ninguna historia aún.</p>
-                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
-                    Explorar historias
-                  </Link>
+                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">Explorar historias</Link>
                 </div>
               )}
             </div>
@@ -301,9 +301,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
                   <p className="text-sm text-gray-500">No tienes historias guardadas.</p>
-                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
-                    Explorar historias
-                  </Link>
+                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">Explorar historias</Link>
                 </div>
               )}
             </div>
@@ -327,18 +325,14 @@ export default async function UserProfile({ params, searchParams }: Props) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold">@{author.username}</p>
-                      {author.bio && (
-                        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{author.bio}</p>
-                      )}
+                      {author.bio && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{author.bio}</p>}
                     </div>
                   </Link>
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
                   <p className="text-sm text-gray-500">No sigues a ningún autor aún.</p>
-                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">
-                    Descubrir autores
-                  </Link>
+                  <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">Descubrir autores</Link>
                 </div>
               )}
             </div>
