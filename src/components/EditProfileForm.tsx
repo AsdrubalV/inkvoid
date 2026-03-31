@@ -95,7 +95,6 @@ export default function EditProfileForm({ profile }: { profile: Profile }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border bg-white/70 p-6">
 
-      {/* Avatar y Banner */}
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-700">Avatar</label>
@@ -127,7 +126,6 @@ export default function EditProfileForm({ profile }: { profile: Profile }) {
         </div>
       </div>
 
-      {/* Bio */}
       <div className="space-y-1">
         <label className="text-xs font-medium text-gray-700">Biografía</label>
         <textarea
@@ -141,7 +139,6 @@ export default function EditProfileForm({ profile }: { profile: Profile }) {
         <p className="text-[10px] text-gray-400 text-right">{bio.length}/300</p>
       </div>
 
-      {/* Links */}
       <div className="space-y-3">
         <h3 className="text-xs font-semibold text-gray-700">Links externos</h3>
         {[
@@ -164,7 +161,7 @@ export default function EditProfileForm({ profile }: { profile: Profile }) {
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {success && <p className="text-sm text-green-600">✓ Cambios guardados correctamente.</p>}
+      {success && <p className="text-sm text-green-600">Cambios guardados correctamente.</p>}
 
       <button
         type="submit"
@@ -176,8 +173,3 @@ export default function EditProfileForm({ profile }: { profile: Profile }) {
     </form>
   );
 }
-```
-
-**5. Agrega en `.env.local` y en Render:**
-```
-SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
