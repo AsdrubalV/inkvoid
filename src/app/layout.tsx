@@ -70,17 +70,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </Script>
       </head>
       <body className="min-h-screen bg-background text-foreground">
-        {/* Meta Pixel noscript fallback */}
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1545799847111899&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
-
         <AuthProvider>
           <ServiceWorkerRegister />
           <div className="border-b border-border bg-white/70 backdrop-blur">
