@@ -3,9 +3,49 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import OfflineButton from "@/components/OfflineButton";
 import ContinueReading from "@/components/ContinueReading";
+import { Metadata } from "next";
 
 interface StoryPageProps {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: StoryPageProps): Promise<Metadata> {
+  const supabase = createServerSupabase();
+  const { data: story } = await supabase
+    .from("stories")
+    .select("title, description, cover_url, category, author_id")
+    .eq("id", params.id)
+    .single();
+
+  if (!story) return { title: "Historia no encontrada — InkVoid" };
+
+  const { data: author } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", story.author_id)
+    .maybeSingle();
+
+  const description = story.description
+    ? story.description.slice(0, 160)
+    : "Lee " + story.title + " en InkVoid, la plataforma de historias en español.";
+
+  return {
+    title: story.title + " — " + (author?.username ?? "InkVoid"),
+    description,
+    openGraph: {
+      title: story.title,
+      description,
+      images: story.cover_url ? [{ url: story.cover_url }] : [],
+      type: "book",
+      siteName: "InkVoid",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: story.title,
+      description,
+      images: story.cover_url ? [story.cover_url] : [],
+    },
+  };
 }
 
 export default async function StoryPage({ params }: StoryPageProps) {
@@ -77,7 +117,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
         .maybeSingle()
     : { data: null };
 
-  // ── Progreso de lectura ───────────────────────────────────────────────
   const { data: progress } = user
     ? await supabase
         .from("reading_progress")
@@ -91,7 +130,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
     <div className="grid gap-8 lg:grid-cols-[2.2fr,1.1fr]">
       <section className="space-y-4">
 
-        {/* Banner continúa leyendo */}
         {progress && (
           <ContinueReading
             storyId={story.id}

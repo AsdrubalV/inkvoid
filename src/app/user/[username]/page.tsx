@@ -7,6 +7,7 @@ import ProfileMessages from "@/components/ProfileMessages";
 import ProfileTabs from "@/components/ProfileTabs";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Metadata } from "next";
 
 interface Props {
   params: { username: string };
@@ -26,6 +27,39 @@ const TIER_DOT: Record<string, string> = {
   gold:     "bg-yellow-400",
   platinum: "bg-purple-400",
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = createServerSupabase();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username, bio, avatar_url")
+    .eq("username", params.username)
+    .single();
+
+  if (!profile) return { title: "Autor no encontrado — InkVoid" };
+
+  const description = profile.bio
+    ? profile.bio.slice(0, 160)
+    : "Descubre las historias de @" + profile.username + " en InkVoid.";
+
+  return {
+    title: "@" + profile.username + " — InkVoid",
+    description,
+    openGraph: {
+      title: "@" + profile.username + " en InkVoid",
+      description,
+      images: profile.avatar_url ? [{ url: profile.avatar_url }] : [],
+      type: "profile",
+      siteName: "InkVoid",
+    },
+    twitter: {
+      card: "summary",
+      title: "@" + profile.username + " en InkVoid",
+      description,
+      images: profile.avatar_url ? [profile.avatar_url] : [],
+    },
+  };
+}
 
 export default async function UserProfile({ params, searchParams }: Props) {
   const supabase = createServerSupabase();
@@ -86,7 +120,6 @@ export default async function UserProfile({ params, searchParams }: Props) {
 
   const isFollowing = !!followData;
 
-  // Badges inline
   const { data: storiesForBadges } = await supabase
     .from("stories")
     .select("id, views, likes")
