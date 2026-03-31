@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
+ 
 const CATEGORIES = ["guias", "concursos", "recursos", "noticias", "entrevistas"];
-
+ 
 interface Article {
   id: string;
   slug: string;
@@ -15,16 +15,16 @@ interface Article {
   categoria: string;
   published: boolean;
 }
-
+ 
 interface Props {
   authorId: string;
   article?: Article;
 }
-
+ 
 export default function ArticleEditor({ authorId, article }: Props) {
   const router = useRouter();
   const supabase = createClient();
-
+ 
   const [title, setTitle] = useState(article?.title ?? "");
   const [slug, setSlug] = useState(article?.slug ?? "");
   const [excerpt, setExcerpt] = useState(article?.excerpt ?? "");
@@ -37,7 +37,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+ 
   function generateSlug(text: string) {
     return text
       .toLowerCase()
@@ -47,27 +47,27 @@ export default function ArticleEditor({ authorId, article }: Props) {
       .replace(/\s+/g, "-")
       .slice(0, 80);
   }
-
+ 
   function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setTitle(e.target.value);
     if (!article) setSlug(generateSlug(e.target.value));
   }
-
+ 
   function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setCoverFile(file);
     if (file) setCoverPreview(URL.createObjectURL(file));
   }
-
+ 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess("");
     setLoading(true);
-
+ 
     try {
       let finalCoverUrl = coverUrl;
-
+ 
       if (coverFile) {
         const ext = coverFile.name.split(".").pop();
         const path = "articles/" + crypto.randomUUID() + "." + ext;
@@ -78,7 +78,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
         const { data: { publicUrl } } = supabase.storage.from("covers").getPublicUrl(storageData.path);
         finalCoverUrl = publicUrl;
       }
-
+ 
       if (article) {
         const { error: updateError } = await supabase
           .from("articles")
@@ -119,10 +119,10 @@ export default function ArticleEditor({ authorId, article }: Props) {
       setLoading(false);
     }
   }
-
+ 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-
+ 
       {/* Portada */}
       <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-3">
         <h2 className="text-sm font-semibold">Imagen de portada</h2>
@@ -134,7 +134,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
               <div className="text-center space-y-1">
                 <p className="text-3xl">🖼️</p>
                 <p className="text-xs text-gray-400">Click para subir imagen</p>
-                <p className="text-[10px] text-gray-300">JPG, PNG — recomendado 1200×630px</p>
+                <p className="text-[10px] text-gray-300">JPG, PNG — recomendado 1200x630px</p>
               </div>
             )}
           </div>
@@ -150,11 +150,11 @@ export default function ArticleEditor({ authorId, article }: Props) {
           </button>
         )}
       </div>
-
+ 
       {/* Metadatos */}
       <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-4">
         <h2 className="text-sm font-semibold">Información del artículo</h2>
-
+ 
         <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Título *</label>
           <input
@@ -166,7 +166,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
             placeholder="Cómo escribir un primer capítulo que enganche..."
           />
         </div>
-
+ 
         <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Slug (URL)</label>
           <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
             />
           </div>
         </div>
-
+ 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Categoría</label>
@@ -193,7 +193,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
               ))}
             </select>
           </div>
-
+ 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Estado</label>
             <div className="flex items-center gap-2 h-10">
@@ -208,7 +208,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
             </div>
           </div>
         </div>
-
+ 
         <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Resumen (excerpt)</label>
           <textarea
@@ -222,7 +222,7 @@ export default function ArticleEditor({ authorId, article }: Props) {
           <p className="text-[10px] text-gray-400 text-right">{excerpt.length}/300</p>
         </div>
       </div>
-
+ 
       {/* Contenido */}
       <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-3">
         <div className="flex items-center justify-between">
@@ -234,9 +234,9 @@ export default function ArticleEditor({ authorId, article }: Props) {
           onChange={(e) => setContent(e.target.value)}
           rows={25}
           className="w-full rounded-lg border border-border bg-white px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-black font-mono resize-y"
-          placeholder={`## Introducción\n\nEscribe aquí el contenido de tu artículo.\n\n## Sección 1\n\nTexto de la sección...\n\n**Texto en negrita**\n\n- Elemento de lista\n- Otro elemento\n\n## Conclusión\n\nTexto final...`}
+          placeholder="## Introducción&#10;&#10;Escribe aquí el contenido de tu artículo."
         />
-        <div className="flex gap-2 text-[10px] text-gray-400">
+        <div className="flex flex-wrap gap-2 text-[10px] text-gray-400">
           <span>## Título H2</span>
           <span>•</span>
           <span>### Título H3</span>
@@ -248,11 +248,11 @@ export default function ArticleEditor({ authorId, article }: Props) {
           <span>![alt](url) imagen</span>
         </div>
       </div>
-
+ 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-green-600">{success}</p>}
-
-      <div className="flex gap-3">
+ 
+      <div className="flex gap-3 flex-wrap">
         <button
           type="submit"
           disabled={loading}
@@ -268,13 +268,13 @@ export default function ArticleEditor({ authorId, article }: Props) {
           Cancelar
         </button>
         {article && (
-          
+          <a
             href={"/escritores/" + article.categoria + "/" + article.slug}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full border border-border px-6 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
           >
-            Ver artículo →
+            Ver artículo
           </a>
         )}
       </div>
