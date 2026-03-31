@@ -9,7 +9,8 @@ const CATEGORIES = [
   "Mystery", "Regression", "Post Apocalyptic", "Zombie",
   "Supernatural", "Adventure", "Psychological Horror",
   "Cosmic Horror", "Thriller", "Crime", "Dystopian",
-  "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy", "Erotic"
+  "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy",
+  "Erotic", "Comedy", "Romance"
 ];
 
 const LANGUAGES = ["Español", "English", "Português", "Français", "Deutsch", "日本語", "中文"];

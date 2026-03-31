@@ -9,7 +9,8 @@ const ALL_CATEGORIES = [
   "Mystery", "Regression", "Post Apocalyptic", "Zombie",
   "Supernatural", "Adventure", "Psychological Horror",
   "Cosmic Horror", "Thriller", "Crime", "Dystopian",
-  "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy", "Erotic"
+  "Survival", "Urban Fantasy", "Mythology", "Historical Fantasy",
+  "Erotic", "Comedy", "Romance"
 ];
 
 interface Props {
