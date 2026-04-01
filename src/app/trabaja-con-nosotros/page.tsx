@@ -81,14 +81,32 @@ export default function TrabajaConNosotrosPage() {
       if (signUpError) throw signUpError;
       if (!data.user) throw new Error("Error al crear cuenta.");
 
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        username,
-        roles: selectedRoles,
-        professional_bio: professionalBio,
-        portfolio_url: portfolioUrl || null,
-        is_collaborator: true,
-      });
+      // Esperar a que el trigger de Supabase cree el perfil base
+      await new Promise((res) => setTimeout(res, 2000));
+
+      // Intentar update primero
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          username,
+          roles: selectedRoles,
+          professional_bio: professionalBio,
+          portfolio_url: portfolioUrl || null,
+          is_collaborator: true,
+        })
+        .eq("id", data.user.id);
+
+      // Si el perfil aún no existe, insertarlo
+      if (updateError) {
+        await supabase.from("profiles").insert({
+          id: data.user.id,
+          username,
+          roles: selectedRoles,
+          professional_bio: professionalBio,
+          portfolio_url: portfolioUrl || null,
+          is_collaborator: true,
+        });
+      }
 
       setStep("success");
     } catch (err: any) {
@@ -173,7 +191,6 @@ export default function TrabajaConNosotrosPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* Datos de cuenta */}
         <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-4">
           <h2 className="text-sm font-semibold">Datos de acceso</h2>
 
@@ -218,7 +235,6 @@ export default function TrabajaConNosotrosPage() {
           </div>
         </div>
 
-        {/* Roles */}
         <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-4">
           <div>
             <h2 className="text-sm font-semibold">¿Qué puedes aportar? *</h2>
@@ -247,7 +263,6 @@ export default function TrabajaConNosotrosPage() {
           )}
         </div>
 
-        {/* Info profesional */}
         <div className="rounded-2xl border border-border bg-white/70 p-5 space-y-4">
           <h2 className="text-sm font-semibold">Información profesional</h2>
 
