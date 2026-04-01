@@ -11,6 +11,9 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
+      // Esperar un momento para que el trigger cree el perfil
+      await new Promise((res) => setTimeout(res, 1500));
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("username")
@@ -20,6 +23,9 @@ export async function GET(request: Request) {
       if (profile?.username) {
         return NextResponse.redirect("https://inkvoid.ink/user/" + profile.username);
       }
+
+      // Si no tiene username redirigir al home
+      return NextResponse.redirect("https://inkvoid.ink");
     }
   }
 
