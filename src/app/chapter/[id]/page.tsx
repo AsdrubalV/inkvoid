@@ -15,9 +15,7 @@ async function getCountryFromIP(ip: string): Promise<string | null> {
     const res = await fetch("http://ip-api.com/json/" + ip + "?fields=country", { next: { revalidate: 86400 } });
     const data = await res.json();
     return data.country ?? null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
@@ -74,7 +72,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     await supabase.from("chapter_views").insert({ chapter_id: chapter.id, story_id: chapter.story_id, user_id: user?.id ?? null, country });
   } catch (_) {}
 
-  // ── Guardar progreso de lectura ──────────────────────────────────────
   if (user && !isLocked) {
     try {
       await supabase.from("reading_progress").upsert({
@@ -100,7 +97,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           </h1>
           {chapter.is_premium && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-              👑 Premium
+              Premium
             </span>
           )}
         </div>
@@ -108,7 +105,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
       {isLocked ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center space-y-4">
-          <div className="text-4xl">👑</div>
           <h2 className="text-lg font-semibold">Capítulo exclusivo para suscriptores</h2>
           <p className="text-sm text-gray-600 max-w-sm mx-auto">
             Este capítulo es exclusivo para miembros de InkVoid. Suscríbete para acceder a todo el contenido premium.
@@ -156,6 +152,30 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               </Link>
             ) : <div />}
           </div>
+
+          {/* Banner registro para usuarios no logueados */}
+          {!user && (
+            <div className="rounded-2xl border border-border bg-gray-900 text-white p-6 text-center space-y-3">
+              <h3 className="font-semibold text-base">¿Te está gustando la historia?</h3>
+              <p className="text-sm text-gray-300 max-w-sm mx-auto">
+                Crea una cuenta gratis para guardar tu progreso, dar like y seguir a tus autores favoritos.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
+                <Link
+                  href="/signup"
+                  className="rounded-full bg-white text-black px-6 py-2 text-sm font-medium hover:bg-gray-100 transition"
+                >
+                  Crear cuenta gratis
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-full border border-white/30 px-6 py-2 text-sm text-white hover:bg-white/10 transition"
+                >
+                  Ya tengo cuenta
+                </Link>
+              </div>
+            </div>
+          )}
 
           <CommentsSection chapterId={chapter.id} currentUserId={user?.id ?? null} />
         </>
