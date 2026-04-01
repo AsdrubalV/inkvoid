@@ -5,7 +5,7 @@ export default function Footer(): React.ReactElement {
   return (
     <div className="mt-16 border-t border-border bg-white/70 backdrop-blur">
       <div className="container py-10 space-y-8">
-        <div className="grid gap-8 sm:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-4">
 
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Soporte</h3>
@@ -23,6 +23,15 @@ export default function Footer(): React.ReactElement {
               <Link href="/publish" className="block text-sm text-gray-600 hover:text-black transition">Publicar</Link>
               <Link href="/signup" className="block text-sm text-gray-600 hover:text-black transition">Crear cuenta</Link>
               <Link href="/escritores" className="block text-sm text-gray-600 hover:text-black transition">Centro de escritores</Link>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Comunidad</h3>
+            <div className="space-y-2">
+              <Link href="/trabaja-con-nosotros" className="block text-sm text-gray-600 hover:text-black transition font-medium">
+                Trabaja con nosotros
+              </Link>
             </div>
           </div>
 
