@@ -18,17 +18,25 @@ export default async function AdminPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 py-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Panel de artículos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestiona el contenido de /escritores</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Panel de administración</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Gestiona el contenido de InkVoid</p>
         </div>
-        <Link
-          href="/escritores/admin/nuevo"
-          className="rounded-full bg-black px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 transition"
-        >
-          + Nuevo artículo
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/escritores/admin/banners"
+            className="rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-gray-50 transition"
+          >
+            Gestionar banners
+          </Link>
+          <Link
+            href="/escritores/admin/nuevo"
+            className="rounded-full bg-black px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 transition"
+          >
+            + Nuevo artículo
+          </Link>
+        </div>
       </div>
 
       {!articles?.length ? (
