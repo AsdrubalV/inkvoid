@@ -2,6 +2,7 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import Link from "next/link";
+import StatsCharts from "@/components/StatsCharts";
 
 export default async function StatsPage() {
   const supabase = createServerSupabase();
@@ -112,10 +113,7 @@ export default async function StatsPage() {
   });
   const avgChaptersPerReader =
     Object.keys(readerChapterCount).length > 0
-      ? (
-          Object.values(readerChapterCount).reduce((a, b) => a + b.size, 0) /
-          Object.keys(readerChapterCount).length
-        ).toFixed(1)
+      ? (Object.values(readerChapterCount).reduce((a, b) => a + b.size, 0) / Object.keys(readerChapterCount).length).toFixed(1)
       : "0";
 
   const monthlyMap: Record<string, number> = {};
@@ -127,6 +125,25 @@ export default async function StatsPage() {
   const monthlyEntries = Object.entries(monthlyMap).slice(-6);
   const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
 
+  // Daily views — últimos 30 días
+  const dailyMap: Record<string, number> = {};
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (29 - i));
+    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  });
+  last30Days.forEach((d) => { dailyMap[d] = 0; });
+  (allViews ?? []).forEach((v) => {
+    if (!v.viewed_at) return;
+    const d = new Date(v.viewed_at);
+    const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (diff <= 29) {
+      const label = d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+      dailyMap[label] = (dailyMap[label] ?? 0) + 1;
+    }
+  });
+  const dailyViews = last30Days.map((date) => ({ date, count: dailyMap[date] ?? 0 }));
+
   const { data: countriesData } = await supabase
     .from("story_views")
     .select("country")
@@ -136,8 +153,7 @@ export default async function StatsPage() {
   (countriesData ?? []).forEach((v) => {
     if (v.country) countryCount[v.country] = (countryCount[v.country] ?? 0) + 1;
   });
-  const topCountries = Object.entries(countryCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const maxCountry = topCountries[0]?.[1] ?? 1;
+  const topCountries = Object.entries(countryCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   const storyComparison = stories
     .map((s) => ({
@@ -168,6 +184,7 @@ export default async function StatsPage() {
           </Link>
         </div>
 
+        {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Vistas totales", value: totalViews.toLocaleString(), sub: totalUniqueViewers.toLocaleString() + " únicos" },
@@ -183,8 +200,8 @@ export default async function StatsPage() {
           ))}
         </div>
 
+        {/* Vistas mensuales + Seguidores */}
         <div className="grid lg:grid-cols-2 gap-4">
-
           <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold">Vistas mensuales</h2>
@@ -195,10 +212,7 @@ export default async function StatsPage() {
                 {monthlyEntries.map(([month, count]) => (
                   <div key={month} className="flex-1 flex flex-col items-center gap-1">
                     <span className="text-[10px] text-gray-400">{count}</span>
-                    <div
-                      className="w-full rounded-t bg-indigo-500 transition-all"
-                      style={{ height: Math.max((count / maxMonthly) * 96, 4) + "px" }}
-                    />
+                    <div className="w-full rounded-t bg-indigo-500" style={{ height: Math.max((count / maxMonthly) * 96, 4) + "px" }} />
                     <span className="text-[10px] text-gray-500">{month}</span>
                   </div>
                 ))}
@@ -215,119 +229,55 @@ export default async function StatsPage() {
             </div>
             {Object.keys(followsMonthly).length > 0 ? (
               <div className="flex items-end gap-2 h-28">
-                {Object.entries(followsMonthly)
-                  .slice(-6)
-                  .map(([month, count]) => {
-                    const maxF = Math.max(...Object.values(followsMonthly), 1);
-                    return (
-                      <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-gray-400">{count}</span>
-                        <div
-                          className="w-full rounded-t bg-emerald-500 transition-all"
-                          style={{ height: Math.max((count / maxF) * 96, 4) + "px" }}
-                        />
-                        <span className="text-[10px] text-gray-500">{month}</span>
-                      </div>
-                    );
-                  })}
+                {Object.entries(followsMonthly).slice(-6).map(([month, count]) => {
+                  const maxF = Math.max(...Object.values(followsMonthly), 1);
+                  return (
+                    <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-gray-400">{count}</span>
+                      <div className="w-full rounded-t bg-emerald-500" style={{ height: Math.max((count / maxF) * 96, 4) + "px" }} />
+                      <span className="text-[10px] text-gray-500">{month}</span>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-gray-500 py-8 text-center">Sin datos aún</p>
             )}
           </div>
-
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-4">
-
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
-            <div>
-              <h2 className="text-sm font-semibold">Top países</h2>
-              <p className="text-xs text-gray-500">Por vistas de historia</p>
-            </div>
-            {topCountries.length > 0 ? (
-              <div className="space-y-3">
-                {topCountries.map(([country, count]) => (
-                  <div key={country} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-300">{country}</span>
-                      <span className="text-gray-400">{count}</span>
-                    </div>
-                    <div className="h-1 w-full rounded-full bg-gray-800">
-                      <div
-                        className="h-1 rounded-full bg-indigo-400"
-                        style={{ width: (count / maxCountry) * 100 + "%" }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 py-4 text-center">Sin datos de país aún</p>
-            )}
-          </div>
-
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
-            <div>
-              <h2 className="text-sm font-semibold">Comparativa de historias</h2>
-              <p className="text-xs text-gray-500">Por vistas totales</p>
-            </div>
-            <div className="space-y-3">
-              {storyComparison.map((s) => (
-                <div key={s.id} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-300 truncate max-w-[70%]">{s.title}</span>
-                    <span className="text-gray-400">{s.views} vistas</span>
-                  </div>
-                  <div className="h-1 w-full rounded-full bg-gray-800">
-                    <div
-                      className="h-1 rounded-full bg-violet-400"
-                      style={{ width: (s.views / maxViews) * 100 + "%" }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-        <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-6">
+        {/* Comparativa */}
+        <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
           <div>
-            <h2 className="text-sm font-semibold">Tasa de retención por capítulo</h2>
-            <p className="text-xs text-gray-500">% de lectores que continúan leyendo respecto al capítulo 1</p>
+            <h2 className="text-sm font-semibold">Comparativa de historias</h2>
+            <p className="text-xs text-gray-500">Por vistas totales</p>
           </div>
-          {stories.map((story) => {
-            const storyChapters = (allChapters ?? []).filter((c) => c.story_id === story.id);
-            if (!storyChapters.length) return null;
-            const ch1Views = chapterViewsMap[storyChapters[0]?.id] ?? 1;
-            return (
-              <div key={story.id} className="space-y-3">
-                <p className="text-xs font-medium text-gray-300 uppercase tracking-wider">{story.title}</p>
-                <div className="space-y-2">
-                  {storyChapters.map((ch) => {
-                    const views = chapterViewsMap[ch.id] ?? 0;
-                    const pct = Math.round((views / ch1Views) * 100);
-                    return (
-                      <div key={ch.id} className="flex items-center gap-3">
-                        <span className="text-[11px] text-gray-500 w-6 text-right">{ch.chapter_number}</span>
-                        <div className="flex-1 h-1.5 rounded-full bg-gray-800">
-                          <div
-                            className="h-1.5 rounded-full bg-amber-400 transition-all"
-                            style={{ width: Math.min(pct, 100) + "%" }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-gray-400 w-10 text-right">{pct}%</span>
-                        <span className="text-[11px] text-gray-600 w-12 text-right">{views} v.</span>
-                      </div>
-                    );
-                  })}
+          <div className="space-y-3">
+            {storyComparison.map((s) => (
+              <div key={s.id} className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-300 truncate max-w-[70%]">{s.title}</span>
+                  <span className="text-gray-400">{s.views} vistas</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-gray-800">
+                  <div className="h-1.5 rounded-full bg-violet-400" style={{ width: (s.views / maxViews) * 100 + "%" }} />
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
+        {/* Charts client-side: Daily, Países, Retención */}
+        <StatsCharts
+          stories={stories}
+          allChapters={allChapters ?? []}
+          chapterViewsMap={chapterViewsMap}
+          dailyViews={dailyViews}
+          topCountries={topCountries}
+          totalViews={totalViews}
+        />
+
+        {/* Tabla detalle */}
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-gray-300">Detalle por historia</h2>
           <div className="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden">
