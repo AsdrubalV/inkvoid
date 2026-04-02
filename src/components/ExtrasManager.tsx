@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 interface Extra {
   id: string;
@@ -21,7 +21,6 @@ interface Props {
 }
 
 export default function ExtrasManager({ storyId, authorId, initialExtras }: Props) {
-  const router = useRouter();
   const supabase = createClient();
 
   const [extras, setExtras] = useState<Extra[]>(initialExtras);
@@ -35,6 +34,7 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   function resetForm() {
     setTitle(""); setDescription(""); setContent("");
@@ -51,6 +51,7 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
 
     setLoading(true);
     setError("");
+    setSuccessMsg("");
 
     try {
       let imageUrl: string | null = null;
@@ -87,8 +88,8 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
       if (insertError) throw insertError;
 
       setExtras((prev) => [...prev, newExtra as Extra]);
+      setSuccessMsg("Contenido guardado correctamente.");
       resetForm();
-      router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Error al guardar.");
     } finally {
@@ -100,7 +101,6 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
     if (!confirm("¿Eliminar este elemento?")) return;
     await supabase.from("story_extras").delete().eq("id", id);
     setExtras((prev) => prev.filter((e) => e.id !== id));
-    router.refresh();
   }
 
   const typeIcons = { image: "🖼️", lore: "📖", video: "🎬" };
@@ -109,20 +109,21 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
   return (
     <div className="space-y-6">
 
-      {/* Botón agregar */}
+      {successMsg && (
+        <p className="text-sm text-green-600">{successMsg}</p>
+      )}
+
       <button
-        onClick={() => setShowForm(!showForm)}
+        onClick={() => { setShowForm(!showForm); setSuccessMsg(""); }}
         className="rounded-full bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 transition"
       >
         {showForm ? "Cancelar" : "+ Agregar contenido extra"}
       </button>
 
-      {/* Formulario */}
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-white/70 p-5 space-y-5">
           <h2 className="text-sm font-semibold">Nuevo contenido extra</h2>
 
-          {/* Tipo */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-700">Tipo de contenido *</label>
             <div className="grid grid-cols-3 gap-2">
@@ -140,7 +141,6 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
             </div>
           </div>
 
-          {/* Título */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Título *</label>
             <input
@@ -153,7 +153,6 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
             />
           </div>
 
-          {/* Descripción */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-700">Descripción (opcional)</label>
             <input
@@ -165,7 +164,6 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
             />
           </div>
 
-          {/* Campos específicos por tipo */}
           {type === "image" && (
             <div className="space-y-2">
               <label className="text-xs font-medium text-gray-700">Imagen *</label>
@@ -240,7 +238,6 @@ export default function ExtrasManager({ storyId, authorId, initialExtras }: Prop
         </form>
       )}
 
-      {/* Lista de extras existentes */}
       {extras.length > 0 ? (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold">Contenido publicado ({extras.length})</h2>
