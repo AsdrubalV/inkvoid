@@ -61,10 +61,10 @@ export default function ManageStoriesButton({ profileUsername }: Props) {
           <Link href="/services/editorial" className="flex items-center w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
             Servicios editoriales
           </Link>
-          <Link href="/services/promote" className="flex items-center w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
+          <Link href="/promocionarme" className="flex items-center w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
             Promocionarme
           </Link>
-          <Link href="/services/earnings" className="flex items-center w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
+          <Link href="/mis-ganancias" className="flex items-center w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-gray-50 transition">
             Mis ganancias
           </Link>
         </div>
