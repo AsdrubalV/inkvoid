@@ -1,12 +1,16 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const SERVICE_NAMES: Record<string, string> = {
   messages: "Mis mensajes",
-  legal: "Servicios legales",
   editorial: "Servicios editoriales",
-  promote: "Promocionarme",
-  earnings: "Mis ganancias",
+};
+
+const SERVICE_ICONS: Record<string, string> = {
+  messages: "💬",
+  editorial: "📝",
 };
 
 interface Props {
@@ -14,11 +18,13 @@ interface Props {
 }
 
 export default function ServicePage({ params }: Props) {
+  const router = useRouter();
   const name = SERVICE_NAMES[params.service] ?? "Servicio";
+  const icon = SERVICE_ICONS[params.service] ?? "🚧";
 
   return (
     <div className="mx-auto max-w-lg py-20 text-center space-y-4">
-      <div className="text-5xl">🚧</div>
+      <div className="text-5xl">{icon}</div>
       <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
       <p className="text-gray-500 text-sm leading-relaxed">
         Este servicio aún no está disponible, pero estará listo en las próximas semanas.
