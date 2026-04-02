@@ -147,8 +147,17 @@ export default function ManagePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                  <Link href={"/publish/chapter?story=" + story.id} className="rounded-full border border-border px-3 py-1 text-xs hover:bg-gray-50 transition">
+                  <Link
+                    href={"/publish/chapter?story=" + story.id}
+                    className="rounded-full border border-border px-3 py-1 text-xs hover:bg-gray-50 transition"
+                  >
                     + Capítulo
+                  </Link>
+                  <Link
+                    href={"/publish/edit/" + story.id}
+                    className="rounded-full border border-border px-3 py-1 text-xs hover:bg-gray-50 transition"
+                  >
+                    Editar historia
                   </Link>
                   <button
                     onClick={() => toggleEditAudio(story)}
@@ -172,7 +181,6 @@ export default function ManagePage() {
                 </div>
               </div>
 
-              {/* Panel editar audiolibro */}
               {story.editingAudio && (
                 <div className="border-t border-border px-4 py-3 bg-indigo-50/50 space-y-2">
                   <p className="text-xs font-medium text-gray-700">URL del audiolibro</p>
@@ -221,7 +229,10 @@ export default function ManagePage() {
                           {ch.chapter_number}. {ch.title}
                         </span>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Link href={"/publish/chapter/edit/" + ch.id} className="rounded-full border border-border px-3 py-0.5 text-xs hover:bg-gray-50 transition">
+                          <Link
+                            href={"/publish/chapter/edit/" + ch.id}
+                            className="rounded-full border border-border px-3 py-0.5 text-xs hover:bg-gray-50 transition"
+                          >
                             Editar
                           </Link>
                           <button
