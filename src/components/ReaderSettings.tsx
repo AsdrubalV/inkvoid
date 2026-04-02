@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type FontFamily = "serif" | "sans" | "mono";
@@ -35,6 +35,8 @@ const THEMES: { value: Theme; label: string; bg: string; text: string; border: s
 
 const EMOJIS = ["❤️", "😂", "😮", "😢", "🔥", "👏", "💯", "🤯"];
 
+const MIN_READ_SECONDS = 120; // 2 minutos
+
 interface Reaction {
   emoji: string;
   count: number;
@@ -44,10 +46,13 @@ interface Reaction {
 interface Props {
   content: string;
   chapterId: string;
+  storyId: string;
+  authorId: string;
   currentUserId: string | null;
+  isPremium: boolean;
 }
 
-export default function ReaderSettings({ content, chapterId, currentUserId }: Props) {
+export default function ReaderSettings({ content, chapterId, storyId, authorId, currentUserId, isPremium }: Props) {
   const supabase = createClient();
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [open, setOpen] = useState(false);
@@ -55,7 +60,73 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
   const [commentPopup, setCommentPopup] = useState<{ paragraphId: string; x: number; y: number } | null>(null);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [readRegistered, setReadRegistered] = useState(false);
+  const [readProgress, setReadProgress] = useState(0);
   const articleRef = useRef<HTMLDivElement>(null);
+  const secondsOnPageRef = useRef(0);
+  const scrolledToBottomRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timer — cuenta segundos activos en la página
+  useEffect(() => {
+    if (!isPremium || !currentUserId || readRegistered) return;
+
+    timerRef.current = setInterval(() => {
+      secondsOnPageRef.current += 1;
+      checkAndRegister();
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPremium, currentUserId, readRegistered]);
+
+  // Scroll tracker
+  useEffect(() => {
+    if (!isPremium || !currentUserId || readRegistered) return;
+
+    function handleScroll() {
+      const article = articleRef.current;
+      if (!article) return;
+
+      const rect = article.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const articleBottom = rect.bottom;
+      const articleHeight = article.offsetHeight;
+      const scrolled = Math.max(0, windowHeight - rect.top);
+      const progress = Math.min(100, Math.round((scrolled / articleHeight) * 100));
+      setReadProgress(progress);
+
+      if (articleBottom <= windowHeight + 100) {
+        scrolledToBottomRef.current = true;
+        checkAndRegister();
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isPremium, currentUserId, readRegistered]);
+
+  const checkAndRegister = useCallback(async () => {
+    if (readRegistered) return;
+    if (!scrolledToBottomRef.current) return;
+    if (secondsOnPageRef.current < MIN_READ_SECONDS) return;
+    if (!currentUserId) return;
+
+    // Condiciones cumplidas — registrar lectura pagada
+    if (timerRef.current) clearInterval(timerRef.current);
+    setReadRegistered(true);
+
+    try {
+      await fetch("/api/paid-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapterId, storyId, authorId }),
+      });
+    } catch (err) {
+      console.error("Error registrando lectura:", err);
+    }
+  }, [readRegistered, currentUserId, chapterId, storyId, authorId]);
 
   useEffect(() => {
     try {
@@ -127,7 +198,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
     try { localStorage.setItem("inkvoid-reader-settings", JSON.stringify(next)); } catch {}
   }
 
-  // Inyectar IDs a los párrafos del HTML
   function processContent(html: string): string {
     let index = 0;
     return html.replace(/<p(\s[^>]*)?>/gi, (match, attrs) => {
@@ -163,9 +233,26 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
         className="flex items-center justify-between px-4 py-2 rounded-xl mb-2 border"
         style={{ background: theme.bg, borderColor: theme.border, color: theme.text }}
       >
-        <span className="text-xs opacity-50">
-          {currentUserId ? "Toca un párrafo para comentar o reaccionar" : "Configuración de lectura"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs opacity-50">
+            {currentUserId ? "Toca un párrafo para comentar o reaccionar" : "Configuración de lectura"}
+          </span>
+          {/* Indicador de lectura válida solo para capítulos premium */}
+          {isPremium && currentUserId && !readRegistered && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-24 rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className="h-full bg-green-400 transition-all duration-300"
+                  style={{ width: readProgress + "%" }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-400">{readProgress}%</span>
+            </div>
+          )}
+          {isPremium && currentUserId && readRegistered && (
+            <span className="text-[10px] text-green-600 font-medium">✓ Lectura registrada</span>
+          )}
+        </div>
         <button
           onClick={() => setOpen(!open)}
           className="text-xs px-3 py-1 rounded-full border transition"
@@ -181,7 +268,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
           className="rounded-xl border p-5 mb-4 space-y-5"
           style={{ background: theme.bg, borderColor: theme.border, color: theme.text }}
         >
-          {/* Tema */}
           <div className="space-y-2">
             <p className="text-xs font-semibold opacity-60 uppercase tracking-wider">Tema</p>
             <div className="flex gap-2">
@@ -195,7 +281,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
             </div>
           </div>
 
-          {/* Fuente */}
           <div className="space-y-2">
             <p className="text-xs font-semibold opacity-60 uppercase tracking-wider">Fuente</p>
             <div className="flex gap-2">
@@ -209,7 +294,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
             </div>
           </div>
 
-          {/* Tamaño */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold opacity-60 uppercase tracking-wider">Tamaño</p>
@@ -227,7 +311,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
             </div>
           </div>
 
-          {/* Interlineado */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold opacity-60 uppercase tracking-wider">Interlineado</p>
@@ -237,7 +320,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
               onChange={(e) => update("lineHeight", Number(e.target.value))} className="w-full" />
           </div>
 
-          {/* Ancho */}
           <div className="space-y-2">
             <p className="text-xs font-semibold opacity-60 uppercase tracking-wider">Ancho</p>
             <div className="flex gap-2">
@@ -265,7 +347,6 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
         style={{ background: theme.bg, borderColor: theme.border, color: theme.text, maxWidth: settings.maxWidth, margin: "0 auto" }}
         onClick={handleParagraphClick}
       >
-        {/* Popup de comentario en párrafo */}
         {commentPopup && (
           <div
             className="absolute z-50 w-72 rounded-xl border bg-white shadow-xl p-3 space-y-2"
@@ -309,13 +390,11 @@ export default function ReaderSettings({ content, chapterId, currentUserId }: Pr
           </div>
         )}
 
-        {/* Contenido con reacciones por párrafo */}
         <div
           style={{ fontSize: settings.fontSize + "px", fontFamily: font.style, lineHeight: settings.lineHeight, color: theme.text }}
           dangerouslySetInnerHTML={{ __html: processedContent }}
         />
 
-        {/* Mostrar reacciones debajo de cada párrafo via overlay */}
         {Object.entries(reactions).map(([paragraphId, paraReactions]) => {
           if (!paraReactions.length) return null;
           return (

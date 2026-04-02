@@ -23,7 +23,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const { data: chapter, error } = await supabase
     .from("chapters")
-    .select("id, title, content_html, chapter_number, story_id, is_premium")
+    .select("id, title, content_html, chapter_number, story_id, is_premium, author_id")
     .eq("id", params.id)
     .single();
 
@@ -134,7 +134,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           <ReaderSettings
             content={chapter.content_html}
             chapterId={chapter.id}
+            storyId={chapter.story_id}
+            authorId={chapter.author_id}
             currentUserId={user?.id ?? null}
+            isPremium={chapter.is_premium ?? false}
           />
 
           <div className="flex items-center justify-between pt-2">
@@ -153,7 +156,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             ) : <div />}
           </div>
 
-          {/* Banner registro para usuarios no logueados */}
           {!user && (
             <div className="rounded-2xl border border-border bg-gray-900 text-white p-6 text-center space-y-3">
               <h3 className="font-semibold text-base">¿Te está gustando la historia?</h3>
