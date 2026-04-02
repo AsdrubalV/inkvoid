@@ -73,6 +73,27 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Verificar suscripción
+  let hasSubscription = false;
+  if (user) {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    hasSubscription = !!sub;
+  }
+
+  // Verificar si hay extras
+  const { count: extrasCount } = await supabase
+    .from("story_extras")
+    .select("*", { count: "exact", head: true })
+    .eq("story_id", story.id);
+
+  const hasExtras = (extrasCount ?? 0) > 0;
+  const isAuthor = user?.id === story.author_id;
+
   try {
     await supabase.from("story_views").insert({
       story_id: params.id,
@@ -150,16 +171,11 @@ export default async function StoryPage({ params }: StoryPageProps) {
           <div className="space-y-2">
             <h1 className="text-xl font-semibold tracking-tight">{story.title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <Link
-                href={"/user/" + authorProfile?.username}
-                className="rounded-full border border-border px-2 py-0.5 hover:bg-gray-50"
-              >
+              <Link href={"/user/" + authorProfile?.username} className="rounded-full border border-border px-2 py-0.5 hover:bg-gray-50">
                 @{authorProfile?.username}
               </Link>
               {story.category && (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px]">
-                  {story.category}
-                </span>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px]">{story.category}</span>
               )}
             </div>
             {story.description && (
@@ -168,10 +184,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
             {(Array.isArray(story.tags) && story.tags.length) ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {(story.tags as string[]).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-border px-2 py-0.5 text-[11px] text-gray-600"
-                  >
+                  <span key={tag} className="rounded-full border border-border px-2 py-0.5 text-[11px] text-gray-600">
                     {tag}
                   </span>
                 ))}
@@ -182,30 +195,41 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
         <div className="flex flex-wrap gap-3 text-xs">
           <form action={"/story/" + story.id + "/like"} method="post">
-            <button
-              type="submit"
-              className={"rounded-full border border-border px-3 py-1 " + (like ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
-            >
+            <button type="submit" className={"rounded-full border border-border px-3 py-1 " + (like ? "bg-gray-900 text-white" : "hover:bg-gray-100")}>
               {likesCount ?? 0} Like
             </button>
           </form>
           <form action={"/story/" + story.id + "/bookmark"} method="post">
-            <button
-              type="submit"
-              className={"rounded-full border border-border px-3 py-1 " + (bookmark ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
-            >
+            <button type="submit" className={"rounded-full border border-border px-3 py-1 " + (bookmark ? "bg-gray-900 text-white" : "hover:bg-gray-100")}>
               {bookmarksCount ?? 0} Bookmark
             </button>
           </form>
           <form action={"/profile/" + authorProfile?.username + "/follow"} method="post">
-            <button
-              type="submit"
-              className={"rounded-full border border-border px-3 py-1 " + (follow ? "bg-gray-900 text-white" : "hover:bg-gray-100")}
-            >
+            <button type="submit" className={"rounded-full border border-border px-3 py-1 " + (follow ? "bg-gray-900 text-white" : "hover:bg-gray-100")}>
               {follow ? "Following" : "Follow author"}
             </button>
           </form>
           <OfflineButton storyId={story.id} storyTitle={story.title} />
+
+          {/* Botón extras — siempre visible si hay contenido o es el autor */}
+          {(hasExtras || isAuthor) && (
+            <Link
+              href={"/story/" + story.id + "/extras"}
+              className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-700 hover:bg-amber-100 transition font-medium"
+            >
+              ✦ Contenido extra {hasSubscription || isAuthor ? "" : "· Premium"}
+            </Link>
+          )}
+
+          {/* Botón para que el autor gestione sus extras */}
+          {isAuthor && (
+            <Link
+              href={"/story/" + story.id + "/extras/manage"}
+              className="rounded-full border border-border px-3 py-1 text-gray-500 hover:bg-gray-50 transition"
+            >
+              Gestionar extras
+            </Link>
+          )}
         </div>
 
         <div className="mt-4 rounded-xl border border-border bg-white/70 p-4">
@@ -240,6 +264,22 @@ export default async function StoryPage({ params }: StoryPageProps) {
             {authorProfile?.bio || "This author has not written a bio yet."}
           </p>
         </div>
+
+        {/* Card extras en sidebar */}
+        {(hasExtras || isAuthor) && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+            <p className="text-xs font-semibold text-amber-800">Contenido exclusivo</p>
+            <p className="text-xs text-amber-700">
+              Este autor ha publicado mapas, arte y lore exclusivo para suscriptores premium.
+            </p>
+            <Link
+              href={"/story/" + story.id + "/extras"}
+              className="block text-center rounded-full bg-amber-500 px-4 py-1.5 text-xs font-medium text-white hover:bg-amber-600 transition"
+            >
+              Ver contenido extra
+            </Link>
+          </div>
+        )}
       </aside>
     </div>
   );
