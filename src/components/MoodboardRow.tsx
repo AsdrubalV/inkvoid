@@ -51,34 +51,64 @@ export default function MoodboardRow({ title, stories, href }: Props) {
   const s = [...stories.slice(0, 12)];
   while (s.length < 12) s.push(s[s.length - 1]);
 
-  // Offsets verticales para efecto masonry
   const offsets1 = [0, 16, 8, 24, 4, 20];
-  const offsets2 = [12, 0, 0, 8, 18, 6];
+  const offsets2 = [12, 0, 8, 18, 6];
+
+  // Partir el título en palabras para el efecto tipográfico
+  const words = title.split(" ");
+  const firstWord = words[0];
+  const restWords = words.slice(1).join(" ");
 
   return (
     <section className="space-y-1">
       <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
 
-        {/* Fila 1 — 6 portadas con offset */}
+        {/* Fila 1 */}
         {s.slice(0, 6).map((story, i) => (
           <CoverCell key={story.id + "-1-" + i} story={story} offset={offsets1[i]} />
         ))}
 
-        {/* Fila 2 — 2 portadas + titulo central (2 cols) + 2 portadas */}
+        {/* Fila 2 */}
         <CoverCell story={s[6]} offset={offsets2[0]} />
         <CoverCell story={s[7]} offset={offsets2[1]} />
 
-        {/* Celda título — ocupa 2 columnas */}
+        {/* Celda título — mismo tamaño que portada */}
         <div
-          className="col-span-2 rounded-xl bg-black flex flex-col items-center justify-center text-center px-4 gap-2"
-          style={{ aspectRatio: "1/1", marginTop: "0px" }}
+          className="rounded-xl bg-black flex flex-col items-start justify-between p-3 overflow-hidden relative"
+          style={{ aspectRatio: "2/3", marginTop: offsets2[2] + "px" }}
         >
-          <p className="text-[9px] text-white/40 uppercase tracking-widest font-medium">InkVoid</p>
-          <p className="text-white font-bold text-sm leading-tight">{title}</p>
+          {/* Fondo decorativo */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white" />
+            <div className="absolute -bottom-8 -left-4 w-32 h-32 rounded-full bg-white" />
+          </div>
+
+          <p className="text-[8px] text-white/30 uppercase tracking-widest font-medium relative z-10">
+            InkVoid
+          </p>
+
+          <div className="relative z-10 space-y-0">
+            {/* Primera palabra grande */}
+            <p
+              className="text-white font-black leading-none uppercase"
+              style={{ fontSize: "clamp(1.1rem, 2.5vw, 1.6rem)", letterSpacing: "-0.02em" }}
+            >
+              {firstWord}
+            </p>
+            {restWords && (
+              <p
+                className="text-white/70 font-bold leading-tight"
+                style={{ fontSize: "clamp(0.6rem, 1.2vw, 0.85rem)" }}
+              >
+                {restWords}
+              </p>
+            )}
+          </div>
+
           {href && (
             <Link
               href={href}
-              className="text-[10px] text-white/40 hover:text-white transition mt-0.5"
+              className="relative z-10 text-[9px] text-white/40 hover:text-white transition border-b border-white/20 hover:border-white pb-0.5"
               onClick={(e) => e.stopPropagation()}
             >
               Ver todo
