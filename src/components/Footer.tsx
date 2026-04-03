@@ -13,6 +13,7 @@ export default function Footer(): React.ReactElement {
               <Link href="/info/faq" className="block text-sm text-gray-600 hover:text-black transition">Preguntas frecuentes</Link>
               <Link href="/info/publishing-rules" className="block text-sm text-gray-600 hover:text-black transition">Reglas de publicación</Link>
               <Link href="/info/monetization-rules" className="block text-sm text-gray-600 hover:text-black transition">Reglas de monetización</Link>
+              <Link href="/info/privacy" className="block text-sm text-gray-600 hover:text-black transition">Política de privacidad</Link>
             </div>
           </div>
 
@@ -66,9 +67,14 @@ export default function Footer(): React.ReactElement {
             </a>
             . Todos los derechos reservados.
           </p>
-          <p className="text-center sm:text-right">
-            El contenido publicado en InkVoid es responsabilidad exclusiva de sus autores.
-          </p>
+          <div className="flex gap-4">
+            <Link href="/info/privacy" className="hover:text-black transition">
+              Privacy Policy
+            </Link>
+            <p className="text-center sm:text-right">
+              El contenido publicado en InkVoid es responsabilidad exclusiva de sus autores.
+            </p>
+          </div>
         </div>
       </div>
     </div>
