@@ -64,10 +64,11 @@ export default function MoodboardRow({ title, stories, href }: Props) {
   return (
     <section>
       <div
-        className="grid gap-1 rounded-2xl overflow-hidden justify-center"
+        className="grid gap-2 rounded-2xl overflow-hidden"
         style={{
-          gridTemplateColumns: "repeat(6, minmax(0, 130px))",
-          gridAutoRows: "auto",
+          gridTemplateColumns: "repeat(6, 1fr)",
+          maxWidth: "900px", // 👈 controla tamaño de TODO el moodboard
+          margin: "0 auto",  // 👈 lo centra correctamente
         }}
       >
         {/* Fila 1 */}
