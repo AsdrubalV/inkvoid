@@ -8,7 +8,7 @@ type Story = {
   category: string | null;
   views: number | null;
   likes: number | null;
-  profiles: { username: string } | null;
+  profiles: { username: string } | { username: string }[] | null;
 };
 
 type Props = {
