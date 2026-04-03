@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createServerSupabase } from "@/lib/supabase/server";
 import HeroBanner from "@/components/HeroBanner";
 import StoryRow from "@/components/StoryRow";
+import MoodboardRow from "@/components/MoodboardRow";
 import ContinueReading from "@/components/ContinueReading";
 
 export default async function HomePage() {
@@ -139,7 +139,6 @@ export default async function HomePage() {
 
   // ─── Vista autenticada ───────────────────────────────────────────────────
 
-  // Continúa leyendo
   const { data: progressData } = await supabase
     .from("reading_progress")
     .select("story_id, chapter_id, chapter_number, updated_at, stories(title), chapters(title)")
@@ -201,12 +200,16 @@ export default async function HomePage() {
     })
   );
 
-  return (
-    <div className="space-y-10">
+  const categoryEmojis: Record<string, string> = {
+    Fantasy: , Romance: , "Dark Fantasy": ,
+    Isekai: , Horror: , Thriller: ",
+  };
 
+  return (
+    <div className="space-y-4">
       <HeroBanner />
 
-      {/* ── Continúa leyendo ── */}
+      {/* Continúa leyendo — mantiene StoryRow */}
       {progressData && progressData.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-base font-semibold tracking-tight">▶️ Continúa leyendo</h2>
@@ -226,19 +229,21 @@ export default async function HomePage() {
         </section>
       )}
 
-      <StoryRow title="📖 Más leídas (total)"         stories={mostRead ?? []}        href="/trending?sort=views" />
-      <StoryRow title="🔥 Más leídas hoy"             stories={storiesDay}            href="/trending?sort=views&period=day" />
-      <StoryRow title="📈 Más leídas esta semana"     stories={storiesWeek}           href="/trending?sort=views&period=week" />
-      <StoryRow title="🗓️ Más leídas este mes"        stories={storiesMonth}          href="/trending?sort=views&period=month" />
-      <StoryRow title="🏆 Más leídas este año"        stories={storiesYear}           href="/trending?sort=views&period=year" />
-      <StoryRow title="❤️ Más votadas"                stories={mostLiked ?? []}       href="/trending?sort=likes" />
-      <StoryRow title="🆕 Actualizadas recientemente" stories={recentlyUpdated ?? []} href="/trending?sort=recent" />
+      <MoodboardRow title="Más leídas (total)"          stories={mostRead ?? []}        href="/trending?sort=views" />
+      <MoodboardRow title="Más leídas hoy"              stories={storiesDay}            href="/trending?sort=views&period=day" />
+      <MoodboardRow title="Más leídas esta semana"      stories={storiesWeek}           href="/trending?sort=views&period=week" />
+      <MoodboardRow title="Más leídas este mes"         stories={storiesMonth}          href="/trending?sort=views&period=month" />
+      <MoodboardRow title="Más leídas este año"         stories={storiesYear}           href="/trending?sort=views&period=year" />
+      <MoodboardRow title="Más votadas"                 stories={mostLiked ?? []}       href="/trending?sort=likes" />
+      <MoodboardRow title="Actualizadas recientemente"  stories={recentlyUpdated ?? []} href="/trending?sort=recent" />
+
       {categoryRows
         .filter((row) => row.stories.length > 0)
         .map((row) => (
-          <StoryRow
+          <MoodboardRow
             key={row.category}
-            title={"✦ " + row.category}
+            title={row.category}
+            emoji={categoryEmojis[row.category] ?? "✦"}
             stories={row.stories}
             href={"/trending?category=" + encodeURIComponent(row.category)}
           />
