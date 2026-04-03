@@ -17,15 +17,12 @@ type Props = {
   href?: string;
 };
 
-function CoverCell({ story, tall }: { story: Story; tall?: boolean }) {
+function CoverCell({ story, offset = 0 }: { story: Story; offset?: number }) {
   return (
     <Link
       href={"/story/" + story.id}
-      className={
-        "group relative overflow-hidden bg-gray-100 rounded-lg " +
-        (tall ? "row-span-2" : "")
-      }
-      style={{ aspectRatio: "2/3" }}
+      className="group relative overflow-hidden bg-gray-100 rounded-xl block"
+      style={{ aspectRatio: "2/3", marginTop: offset + "px" }}
     >
       {story.cover_url ? (
         <img
@@ -35,20 +32,13 @@ function CoverCell({ story, tall }: { story: Story; tall?: boolean }) {
         />
       ) : (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center p-2">
-          <p className="text-xs text-gray-500 text-center line-clamp-3">
-            {story.title}
-          </p>
+          <p className="text-xs text-gray-500 text-center line-clamp-3">{story.title}</p>
         </div>
       )}
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
-        <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">
-          {story.title}
-        </p>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
+        <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">{story.title}</p>
         {story.category && (
-          <p className="text-white/60 text-[9px] mt-0.5">
-            {story.category}
-          </p>
+          <p className="text-white/60 text-[9px] mt-0.5">{story.category}</p>
         )}
       </div>
     </Link>
@@ -58,68 +48,47 @@ function CoverCell({ story, tall }: { story: Story; tall?: boolean }) {
 export default function MoodboardRow({ title, stories, href }: Props) {
   if (!stories.length) return null;
 
-  const s = [...stories.slice(0, 11)];
-  while (s.length < 11) s.push(s[0]);
+  const s = [...stories.slice(0, 12)];
+  while (s.length < 12) s.push(s[s.length - 1]);
+
+  // Offsets verticales para efecto masonry
+  const offsets1 = [0, 16, 8, 24, 4, 20];
+  const offsets2 = [12, 0, 0, 8, 18, 6];
 
   return (
-    <section>
-      <div
-        className="grid gap-2 rounded-2xl overflow-hidden"
-        style={{
-          gridTemplateColumns: "repeat(6, 1fr)",
-          maxWidth: "900px", // 👈 controla tamaño de TODO el moodboard
-          margin: "0 auto",  // 👈 lo centra correctamente
-        }}
-      >
-        {/* Fila 1 */}
+    <section className="space-y-1">
+      <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
+
+        {/* Fila 1 — 6 portadas con offset */}
         {s.slice(0, 6).map((story, i) => (
-          <div
-            key={story.id + "-a-" + i}
-            style={{ marginTop: [0, 12, 6, 18, 4, 14][i] + "px" }}
-          >
-            <CoverCell story={story} />
-          </div>
+          <CoverCell key={story.id + "-1-" + i} story={story} offset={offsets1[i]} />
         ))}
 
-        {/* Fila 2 */}
-        {[0, 1, 2, 3, 4].map((i) => {
-          if (i === 2) {
-            return (
-              <div
-                key="title-cell"
-                className="rounded-lg bg-white border border-border flex flex-col items-center justify-center text-center px-2 py-3 gap-1"
-                style={{ aspectRatio: "2/3", marginTop: "6px" }}
-              >
-                <p className="text-[8px] text-gray-400 uppercase tracking-widest font-medium">
-                  InkVoid
-                </p>
-                <p className="text-gray-900 font-bold text-xs leading-tight">
-                  {title}
-                </p>
-                {href && (
-                  <Link
-                    href={href}
-                    className="text-[9px] text-gray-400 hover:text-black transition underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Ver todo
-                  </Link>
-                )}
-              </div>
-            );
-          }
+        {/* Fila 2 — 2 portadas + titulo central (2 cols) + 2 portadas */}
+        <CoverCell story={s[6]} offset={offsets2[0]} />
+        <CoverCell story={s[7]} offset={offsets2[1]} />
 
-          const storyIndex = 6 + (i < 2 ? i : i - 1);
-
-          return (
-            <div
-              key={s[storyIndex].id + "-b-" + i}
-              style={{ marginTop: [8, 0, 0, 10, 4][i] + "px" }}
+        {/* Celda título — ocupa 2 columnas */}
+        <div
+          className="col-span-2 rounded-xl bg-black flex flex-col items-center justify-center text-center px-4 gap-2"
+          style={{ aspectRatio: "1/1", marginTop: "0px" }}
+        >
+          <p className="text-[9px] text-white/40 uppercase tracking-widest font-medium">InkVoid</p>
+          <p className="text-white font-bold text-sm leading-tight">{title}</p>
+          {href && (
+            <Link
+              href={href}
+              className="text-[10px] text-white/40 hover:text-white transition mt-0.5"
+              onClick={(e) => e.stopPropagation()}
             >
-              <CoverCell story={s[storyIndex]} />
-            </div>
-          );
-        })}
+              Ver todo
+            </Link>
+          )}
+        </div>
+
+        <CoverCell story={s[8]} offset={offsets2[3]} />
+        <CoverCell story={s[9]} offset={offsets2[4]} />
+
       </div>
     </section>
   );
