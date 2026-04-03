@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import CommentsSection from "./comments";
 import ReaderSettings from "@/components/ReaderSettings";
+import FanartSection from "@/components/FanartSection";
 
 interface ChapterPageProps {
   params: { id: string };
@@ -163,16 +164,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 Crea una cuenta gratis para guardar tu progreso, dar like y seguir a tus autores favoritos.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
-                <Link
-                  href="/signup"
-                  className="rounded-full bg-white text-black px-6 py-2 text-sm font-medium hover:bg-gray-100 transition"
-                >
+                <Link href="/signup" className="rounded-full bg-white text-black px-6 py-2 text-sm font-medium hover:bg-gray-100 transition">
                   Crear cuenta gratis
                 </Link>
-                <Link
-                  href="/login"
-                  className="rounded-full border border-white/30 px-6 py-2 text-sm text-white hover:bg-white/10 transition"
-                >
+                <Link href="/login" className="rounded-full border border-white/30 px-6 py-2 text-sm text-white hover:bg-white/10 transition">
                   Ya tengo cuenta
                 </Link>
               </div>
@@ -180,6 +175,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           )}
 
           <CommentsSection chapterId={chapter.id} currentUserId={user?.id ?? null} />
+
+          <FanartSection
+            chapterId={chapter.id}
+            storyId={chapter.story_id}
+            currentUserId={user?.id ?? null}
+          />
         </>
       )}
     </div>
