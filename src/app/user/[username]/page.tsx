@@ -144,10 +144,10 @@ export default async function UserProfile({ params, searchParams }: Props) {
   else if (totalLikesForBadge >= 100) badges.push({ label: "100 Likes", tier: "silver" });
   else if (totalLikesForBadge >= 10) badges.push({ label: "10 Likes", tier: "bronze" });
 
-  if ((totalChapters ?? 0) >= 100) badges.push({ label: "100 Capítulos", tier: "platinum" });
-  else if ((totalChapters ?? 0) >= 50) badges.push({ label: "50 Capítulos", tier: "gold" });
-  else if ((totalChapters ?? 0) >= 10) badges.push({ label: "10 Capítulos", tier: "silver" });
-  else if ((totalChapters ?? 0) >= 1) badges.push({ label: "Primer capítulo", tier: "bronze" });
+  if ((totalChapters ?? 0) >= 100) badges.push({ label: "100 Capitulos", tier: "platinum" });
+  else if ((totalChapters ?? 0) >= 50) badges.push({ label: "50 Capitulos", tier: "gold" });
+  else if ((totalChapters ?? 0) >= 10) badges.push({ label: "10 Capitulos", tier: "silver" });
+  else if ((totalChapters ?? 0) >= 1) badges.push({ label: "Primer capitulo", tier: "bronze" });
 
   if ((followersCount ?? 0) >= 1000) badges.push({ label: "1K Seguidores", tier: "platinum" });
   else if ((followersCount ?? 0) >= 100) badges.push({ label: "100 Seguidores", tier: "gold" });
@@ -216,8 +216,10 @@ export default async function UserProfile({ params, searchParams }: Props) {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="relative h-56 w-full overflow-hidden rounded-xl bg-gray-200">
+    <div className="space-y-6">
+
+      {/* Banner */}
+      <div className="relative h-36 sm:h-56 w-full overflow-hidden rounded-xl bg-gray-200">
         {profile.banner_url ? (
           <img src={profile.banner_url} alt="banner" className="h-full w-full object-cover" />
         ) : (
@@ -226,10 +228,13 @@ export default async function UserProfile({ params, searchParams }: Props) {
         <EditProfileButton profileUsername={username} />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr,260px]">
-        <div className="space-y-8">
-          <div className="flex items-start gap-6">
-            <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
+      {/* Layout principal */}
+      <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
+        <div className="space-y-6 min-w-0">
+
+          {/* Info del usuario */}
+          <div className="flex items-start gap-4">
+            <div className="h-16 w-16 sm:h-24 sm:w-24 overflow-hidden rounded-full border border-border bg-gray-100 flex-shrink-0 flex items-center justify-center">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
               ) : (
@@ -238,32 +243,35 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 </div>
               )}
             </div>
-            <div className="flex-1 space-y-2">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-semibold">@{profile.username}</h1>
-                  <p className="text-gray-600 text-sm mt-0.5">
-                    {profile.bio || "Este autor aún no ha escrito una biografía."}
-                  </p>
-                </div>
+
+            <div className="flex-1 min-w-0 space-y-2">
+              {/* Username + botones */}
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h1 className="text-lg sm:text-2xl font-semibold truncate">@{profile.username}</h1>
                 {user && !isOwner && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <form action={"/profile/" + username + "/follow"} method="post">
                       <button
                         type="submit"
-                        className={"rounded-full border px-4 py-1.5 text-xs font-medium transition " + (isFollowing ? "bg-gray-900 text-white border-gray-900 hover:bg-gray-700" : "border-border text-gray-700 hover:bg-gray-100")}
+                        className={"rounded-full border px-3 py-1 text-xs font-medium transition " + (isFollowing ? "bg-gray-900 text-white border-gray-900" : "border-border text-gray-700 hover:bg-gray-100")}
                       >
                         {isFollowing ? "Siguiendo" : "Seguir"}
                       </button>
                     </form>
-                    <Link href={"/mensajes/" + username} className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition">
+                    <Link href={"/mensajes/" + username} className="rounded-full border border-border px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 transition">
                       Mensaje
                     </Link>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-5 pt-1 text-sm">
+              {/* Bio */}
+              <p className="text-gray-600 text-sm line-clamp-2">
+                {profile.bio || "Este autor aun no ha escrito una biografia."}
+              </p>
+
+              {/* Stats */}
+              <div className="flex gap-4 text-sm">
                 <div className="text-center">
                   <p className="font-semibold">{(stories?.length ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-gray-500">Historias</p>
@@ -278,17 +286,19 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3 pt-1 text-xs text-gray-500">
+              {/* Links sociales */}
+              <div className="flex flex-wrap gap-3 text-xs text-gray-500">
                 {profile.patreon_url && <a href={profile.patreon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Patreon</a>}
                 {profile.amazon_url && <a href={profile.amazon_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Amazon</a>}
                 {profile.tiktok_url && <a href={profile.tiktok_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">TikTok</a>}
                 {profile.website_url && <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-black">Website</a>}
               </div>
 
+              {/* Badges */}
               {badges.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {badges.map((badge, i) => (
-                    <div key={i} className={"flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium " + TIER_STYLES[badge.tier]}>
+                    <div key={i} className={"flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium " + TIER_STYLES[badge.tier]}>
                       <div className={"h-1.5 w-1.5 rounded-full flex-shrink-0 " + TIER_DOT[badge.tier]} />
                       {badge.label}
                     </div>
@@ -298,6 +308,12 @@ export default async function UserProfile({ params, searchParams }: Props) {
             </div>
           </div>
 
+          {/* Panel autor en móvil — aparece aquí, en desktop va al aside */}
+          <div className="lg:hidden">
+            <ManageStoriesButton profileUsername={username} />
+          </div>
+
+          {/* Tabs */}
           {isOwner && (
             <ProfileTabs
               username={username}
@@ -311,6 +327,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
             />
           )}
 
+          {/* Contenido de tabs */}
           {activeTab === "stories" || !isOwner ? (
             <div className="space-y-4">
               {!isOwner && <h2 className="text-lg font-semibold">Historias</h2>}
@@ -319,7 +336,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
                   <StoryCard key={s.id} id={s.id} title={s.title} description={s.description} coverUrl={s.cover_url} category={s.category} tags={Array.isArray(s.tags) ? s.tags : []} authorUsername={profile.username} />
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No hay historias publicadas aún.</p>
+                <p className="text-gray-500 text-sm">No hay historias publicadas aun.</p>
               )}
             </div>
           ) : activeTab === "historial" ? (
@@ -330,7 +347,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
-                  <p className="text-sm text-gray-500">No has leído ninguna historia aún.</p>
+                  <p className="text-sm text-gray-500">No has leido ninguna historia aun.</p>
                   <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">Explorar historias</Link>
                 </div>
               )}
@@ -360,7 +377,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
                         <span className="text-xs font-medium text-gray-400">{author.username.slice(0, 2).toUpperCase()}</span>
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold">@{author.username}</p>
                       {author.bio && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{author.bio}</p>}
                     </div>
@@ -368,7 +385,7 @@ export default async function UserProfile({ params, searchParams }: Props) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-border bg-white/70 py-10 text-center space-y-2">
-                  <p className="text-sm text-gray-500">No sigues a ningún autor aún.</p>
+                  <p className="text-sm text-gray-500">No sigues a ningun autor aun.</p>
                   <Link href="/trending" className="inline-block text-xs text-black underline hover:no-underline">Descubrir autores</Link>
                 </div>
               )}
@@ -384,7 +401,8 @@ export default async function UserProfile({ params, searchParams }: Props) {
           </Suspense>
         </div>
 
-        <aside className="space-y-4">
+        {/* Aside — solo desktop */}
+        <aside className="hidden lg:block space-y-4">
           <ManageStoriesButton profileUsername={username} />
         </aside>
       </div>
