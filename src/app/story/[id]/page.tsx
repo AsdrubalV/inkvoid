@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import OfflineButton from "@/components/OfflineButton";
 import ContinueReading from "@/components/ContinueReading";
+import ShareButtons from "@/components/ShareButtons";
 import { Metadata } from "next";
 
 interface StoryPageProps {
@@ -73,7 +74,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Verificar suscripción
   let hasSubscription = false;
   if (user) {
     const { data: sub } = await supabase
@@ -85,7 +85,6 @@ export default async function StoryPage({ params }: StoryPageProps) {
     hasSubscription = !!sub;
   }
 
-  // Verificar si hay extras
   const { count: extrasCount } = await supabase
     .from("story_extras")
     .select("*", { count: "exact", head: true })
@@ -211,17 +210,15 @@ export default async function StoryPage({ params }: StoryPageProps) {
           </form>
           <OfflineButton storyId={story.id} storyTitle={story.title} />
 
-          {/* Botón extras — siempre visible si hay contenido o es el autor */}
           {(hasExtras || isAuthor) && (
             <Link
               href={"/story/" + story.id + "/extras"}
               className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-700 hover:bg-amber-100 transition font-medium"
             >
-              ✦ Contenido extra {hasSubscription || isAuthor ? "" : "· Premium"}
+              Contenido extra {hasSubscription || isAuthor ? "" : "· Premium"}
             </Link>
           )}
 
-          {/* Botón para que el autor gestione sus extras */}
           {isAuthor && (
             <Link
               href={"/story/" + story.id + "/extras/manage"}
@@ -231,6 +228,9 @@ export default async function StoryPage({ params }: StoryPageProps) {
             </Link>
           )}
         </div>
+
+        {/* Botones de compartir */}
+        <ShareButtons title={story.title} storyId={story.id} />
 
         <div className="mt-4 rounded-xl border border-border bg-white/70 p-4">
           <h2 className="mb-3 text-sm font-semibold">Chapters</h2>
@@ -245,13 +245,13 @@ export default async function StoryPage({ params }: StoryPageProps) {
                   <span>{ch.chapter_number}. {ch.title}</span>
                   {progress?.chapter_number === ch.chapter_number && (
                     <span className="text-[10px] text-green-600 bg-green-50 rounded-full px-2 py-0.5">
-                      Aquí dejaste
+                      Aqui dejaste
                     </span>
                   )}
                 </Link>
               ))
             ) : (
-              <p className="py-3 text-sm text-gray-500">No chapters yet.</p>
+              <p className="py-3 text-sm text-gray-500">No hay capitulos aun.</p>
             )}
           </div>
         </div>
@@ -259,13 +259,12 @@ export default async function StoryPage({ params }: StoryPageProps) {
 
       <aside className="space-y-4">
         <div className="rounded-xl border border-border bg-white/70 p-4 text-sm">
-          <h2 className="mb-2 text-sm font-semibold">About the author</h2>
+          <h2 className="mb-2 text-sm font-semibold">Sobre el autor</h2>
           <p className="text-xs text-gray-700">
-            {authorProfile?.bio || "This author has not written a bio yet."}
+            {authorProfile?.bio || "Este autor aun no ha escrito una biografia."}
           </p>
         </div>
 
-        {/* Card extras en sidebar */}
         {(hasExtras || isAuthor) && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
             <p className="text-xs font-semibold text-amber-800">Contenido exclusivo</p>
