@@ -20,7 +20,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const supabase = createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
+
   let username: string | null = null;
+  let hasSubscription = false;
+
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -28,6 +31,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       .eq("id", user.id)
       .single();
     username = profile?.username ?? null;
+
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    hasSubscription = !!sub;
   }
 
   return (
@@ -67,7 +78,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
         <AuthProvider>
           <ServiceWorkerRegister />
-          <NavbarClient user={user} username={username} />
+          <NavbarClient user={user} username={username} hasSubscription={hasSubscription} />
           <main className="container py-8">
             {children}
           </main>
