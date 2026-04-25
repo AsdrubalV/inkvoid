@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/inkvoidlogo1.png",
     apple: "/inkvoidlogo1.png"
+  },
+  other: {
+    "facebook-domain-verification": "e6f0woixo8iafx3v4cbjffwnfj7hep"
   }
 };
 
